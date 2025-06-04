@@ -1,0 +1,76 @@
+.inquiry-list {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.inquiry-name {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inquiry-name .name {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.inquiry-name .email {
+  color: var(--secondary-color);
+  font-size: 12px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-new {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-contacted {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-follow-up {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.status-converted {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-lost {
+  background-color: #fbe9e7;
+  color: #d32f2f;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.table th {
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .table {
+    font-size: 12px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+} 
