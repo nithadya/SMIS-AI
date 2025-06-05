@@ -1,5 +1,4 @@
 import React from 'react';
-import './InquiryFilters.css';
 
 const InquiryFilters = ({ filters, onFilterChange }) => {
   const handleChange = (field, value) => {
@@ -10,15 +9,13 @@ const InquiryFilters = ({ filters, onFilterChange }) => {
   };
 
   return (
-    <div className="inquiry-filters">
-      <h3>Filters</h3>
-      
-      <div className="filter-section">
-        <label className="filter-label">Source</label>
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Source</label>
         <select
           value={filters.source}
           onChange={(e) => handleChange('source', e.target.value)}
-          className="filter-select"
+          className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
         >
           <option value="all">All Sources</option>
           <option value="web">Web Form</option>
@@ -28,26 +25,26 @@ const InquiryFilters = ({ filters, onFilterChange }) => {
         </select>
       </div>
 
-      <div className="filter-section">
-        <label className="filter-label">Program</label>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Program</label>
         <select
           value={filters.program}
           onChange={(e) => handleChange('program', e.target.value)}
-          className="filter-select"
+          className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
         >
           <option value="all">All Programs</option>
-          <option value="it">Information Technology</option>
-          <option value="business">Business Management</option>
-          <option value="engineering">Engineering</option>
+          <option value="bit">BIT</option>
+          <option value="bbm">BBM</option>
+          <option value="bsc">BSc</option>
         </select>
       </div>
 
-      <div className="filter-section">
-        <label className="filter-label">Status</label>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
         <select
           value={filters.status}
           onChange={(e) => handleChange('status', e.target.value)}
-          className="filter-select"
+          className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
         >
           <option value="all">All Status</option>
           <option value="new">New</option>
@@ -58,12 +55,12 @@ const InquiryFilters = ({ filters, onFilterChange }) => {
         </select>
       </div>
 
-      <div className="filter-section">
-        <label className="filter-label">Counselor</label>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Counselor</label>
         <select
           value={filters.counselor}
           onChange={(e) => handleChange('counselor', e.target.value)}
-          className="filter-select"
+          className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
         >
           <option value="all">All Counselors</option>
           <option value="sarah">Sarah Wilson</option>
@@ -72,12 +69,12 @@ const InquiryFilters = ({ filters, onFilterChange }) => {
         </select>
       </div>
 
-      <div className="filter-section">
-        <label className="filter-label">Date Range</label>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">Date Range</label>
         <select
           value={filters.dateRange}
           onChange={(e) => handleChange('dateRange', e.target.value)}
-          className="filter-select"
+          className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
         >
           <option value="all">All Time</option>
           <option value="today">Today</option>
@@ -88,7 +85,7 @@ const InquiryFilters = ({ filters, onFilterChange }) => {
       </div>
 
       <button 
-        className="button button-secondary clear-filters"
+        className="w-full px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
         onClick={() => onFilterChange({
           source: 'all',
           program: 'all',

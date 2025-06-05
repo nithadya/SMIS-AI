@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './InquiryForm.css';
+import { motion } from 'framer-motion';
 
 const InquiryForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -25,69 +25,82 @@ const InquiryForm = ({ onSubmit }) => {
     onSubmit(formData);
   };
 
+  const inputClasses = "w-full px-4 py-2 rounded-lg glass transition-all duration-200 focus:glow-sm text-secondary-700 dark:text-secondary-300 placeholder-secondary-400 dark:placeholder-secondary-600";
+  const labelClasses = "block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-1";
+
   return (
-    <div className="inquiry-form">
+    <div className="card glass p-6">
       <form onSubmit={handleSubmit}>
-        <div className="form-grid">
-          <div className="form-group">
-            <label className="form-label">Full Name *</label>
-            <input
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label htmlFor="name" className={labelClasses}>Full Name *</label>
+            <motion.input
+              whileFocus={{ scale: 1.01 }}
               type="text"
+              id="name"
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className="form-input"
+              className={inputClasses}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Email *</label>
-            <input
+          <div>
+            <label htmlFor="email" className={labelClasses}>Email *</label>
+            <motion.input
+              whileFocus={{ scale: 1.01 }}
               type="email"
+              id="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              className="form-input"
+              className={inputClasses}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Phone Number *</label>
-            <input
+          <div>
+            <label htmlFor="phone" className={labelClasses}>Phone Number *</label>
+            <motion.input
+              whileFocus={{ scale: 1.01 }}
               type="tel"
+              id="phone"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="form-input"
+              className={inputClasses}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Program of Interest *</label>
-            <select
+          <div>
+            <label htmlFor="program" className={labelClasses}>Program of Interest *</label>
+            <motion.select
+              whileFocus={{ scale: 1.01 }}
+              id="program"
               name="program"
               value={formData.program}
               onChange={handleChange}
-              className="form-input"
+              className={inputClasses}
               required
             >
               <option value="">Select Program</option>
               <option value="it">Information Technology</option>
               <option value="business">Business Management</option>
               <option value="engineering">Engineering</option>
-            </select>
+            </motion.select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Source *</label>
-            <select
+          <div>
+            <label htmlFor="source" className={labelClasses}>Source *</label>
+            <motion.select
+              whileFocus={{ scale: 1.01 }}
+              id="source"
               name="source"
               value={formData.source}
               onChange={handleChange}
-              className="form-input"
+              className={inputClasses}
               required
             >
               <option value="">Select Source</option>
@@ -95,42 +108,50 @@ const InquiryForm = ({ onSubmit }) => {
               <option value="phone">Phone</option>
               <option value="email">Email</option>
               <option value="walk-in">Walk-in</option>
-            </select>
+            </motion.select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Assigned Counselor *</label>
-            <select
+          <div>
+            <label htmlFor="counselor" className={labelClasses}>Assigned Counselor *</label>
+            <motion.select
+              whileFocus={{ scale: 1.01 }}
+              id="counselor"
               name="counselor"
               value={formData.counselor}
               onChange={handleChange}
-              className="form-input"
+              className={inputClasses}
               required
             >
               <option value="">Select Counselor</option>
               <option value="sarah">Sarah Wilson</option>
               <option value="john">John Smith</option>
               <option value="mary">Mary Johnson</option>
-            </select>
+            </motion.select>
           </div>
 
-          <div className="form-group full-width">
-            <label className="form-label">Notes</label>
-            <textarea
+          <div className="md:col-span-2">
+            <label htmlFor="notes" className={labelClasses}>Notes</label>
+            <motion.textarea
+              whileFocus={{ scale: 1.01 }}
+              id="notes"
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              className="form-input"
-              rows="4"
+              className={`${inputClasses} min-h-[100px] resize-y`}
               placeholder="Enter any additional notes or comments..."
             />
           </div>
         </div>
 
-        <div className="form-actions">
-          <button type="submit" className="button button-primary">
+        <div className="mt-6 flex justify-end">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="submit"
+            className="px-6 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-accent-500 text-white font-medium hover:glow-sm transition-all duration-200"
+          >
             Create Inquiry
-          </button>
+          </motion.button>
         </div>
       </form>
     </div>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './StudentManagement.css';
 import StudentSearch from './StudentSearch';
 import StudentDetails from './StudentDetails';
 import StudentPayments from './StudentPayments';
@@ -71,52 +70,96 @@ const StudentManagement = () => {
   };
 
   return (
-    <div className="student-management">
-      <div className="page-header">
-        <h1>Student Management</h1>
-        <p>Access and manage student information</p>
+    <div className="p-6 sm:p-8 max-w-[1600px] mx-auto">
+      <div className="mb-10">
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">Student Management</h1>
+        <p className="text-lg text-slate-500">Access and manage student information</p>
       </div>
 
       <StudentSearch onSearch={handleSearch} />
 
       {activeStudent && (
-        <div className="student-info-container">
-          <div className="student-header">
-            <div className="student-basic-info">
-              <img 
-                src={`data:image/jpeg;base64,${activeStudent.documents.profilePhoto}`} 
-                alt="Student" 
-                className="student-photo"
-              />
-              <div>
-                <h2>{activeStudent.personalInfo.name}</h2>
-                <p>Campus ID: {activeStudent.personalInfo.campusId}</p>
-                <p>NIC: {activeStudent.personalInfo.nicNo}</p>
+        <div className="bg-white rounded-xl shadow-sm mt-8 overflow-hidden">
+          <div className="p-6 sm:p-8 border-b border-slate-200">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+              <div className="flex gap-6 items-start">
+                <div className="relative group">
+                  <img 
+                    src={`data:image/jpeg;base64,${activeStudent.documents.profilePhoto}`} 
+                    alt={activeStudent.personalInfo.name}
+                    className="w-20 h-20 rounded-xl object-cover ring-2 ring-slate-200 
+                      group-hover:ring-blue-500 transition-all duration-200"
+                  />
+                  <button 
+                    className="absolute -bottom-2 -right-2 p-1.5 bg-white rounded-lg shadow-sm 
+                      border border-slate-200 text-slate-500 hover:text-blue-600 
+                      transition-colors duration-200"
+                    aria-label="Update profile photo"
+                  >
+                    📷
+                  </button>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-800 mb-2">
+                    {activeStudent.personalInfo.name}
+                  </h2>
+                  <div className="space-y-1">
+                    <p className="text-sm text-slate-500">
+                      Campus ID: <span className="font-medium">{activeStudent.personalInfo.campusId}</span>
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      NIC: <span className="font-medium">{activeStudent.personalInfo.nicNo}</span>
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="student-status">
-              <span className="status-badge active">
+              <span className={`
+                px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2
+                ${activeStudent.academicInfo.registrationStatus === 'Active' 
+                  ? 'bg-green-50 text-green-600' 
+                  : 'bg-yellow-50 text-yellow-600'
+                }
+              `}>
+                <span className={`w-2 h-2 rounded-full ${
+                  activeStudent.academicInfo.registrationStatus === 'Active'
+                    ? 'bg-green-600 animate-pulse'
+                    : 'bg-yellow-600'
+                }`} />
                 {activeStudent.academicInfo.registrationStatus}
               </span>
             </div>
           </div>
 
-          <div className="tab-navigation">
-            <button 
-              className={`tab-button ${activeTab === 'details' ? 'active' : ''}`}
-              onClick={() => setActiveTab('details')}
-            >
-              Student Details
-            </button>
-            <button 
-              className={`tab-button ${activeTab === 'payments' ? 'active' : ''}`}
-              onClick={() => setActiveTab('payments')}
-            >
-              Payment History
-            </button>
+          <div className="border-b border-slate-200">
+            <div className="flex flex-wrap">
+              <button 
+                className={`px-8 py-4 text-sm font-medium border-b-2 transition-all duration-200
+                  ${activeTab === 'details' 
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50' 
+                    : 'border-transparent text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                  }`}
+                onClick={() => setActiveTab('details')}
+                aria-selected={activeTab === 'details'}
+                role="tab"
+              >
+                Student Details
+              </button>
+              <button 
+                className={`px-8 py-4 text-sm font-medium border-b-2 transition-all duration-200
+                  ${activeTab === 'payments' 
+                    ? 'border-blue-500 text-blue-600 bg-blue-50/50' 
+                    : 'border-transparent text-slate-600 hover:text-slate-800 hover:bg-slate-50'
+                  }`}
+                onClick={() => setActiveTab('payments')}
+                aria-selected={activeTab === 'payments'}
+                role="tab"
+              >
+                Payment History
+              </button>
+            </div>
           </div>
 
-          <div className="tab-content">
+          <div className="p-6 sm:p-8">
             {activeTab === 'details' ? (
               <StudentDetails student={activeStudent} />
             ) : (

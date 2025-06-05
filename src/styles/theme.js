@@ -1,0 +1,221 @@
+export const theme = {
+  light: {
+    primary: {
+      50: '#eef2ff',
+      100: '#e0e7ff',
+      200: '#c7d2fe',
+      300: '#a5b4fc',
+      400: '#818cf8',
+      500: '#6366f1', // Main primary color - Indigo
+      600: '#4f46e5',
+      700: '#4338ca',
+      800: '#3730a3',
+      900: '#312e81',
+    },
+    accent: {
+      50: '#ecfeff',
+      100: '#cffafe',
+      200: '#a5f3fc',
+      300: '#67e8f9',
+      400: '#22d3ee',
+      500: '#06b6d4', // Cyan for accents
+      600: '#0891b2',
+      700: '#0e7490',
+      800: '#155e75',
+      900: '#164e63',
+    },
+    secondary: {
+      50: '#f8fafc',
+      100: '#f1f5f9',
+      200: '#e2e8f0',
+      300: '#cbd5e1',
+      400: '#94a3b8',
+      500: '#64748b',
+      600: '#475569',
+      700: '#334155',
+      800: '#1e293b',
+      900: '#0f172a',
+    },
+    success: {
+      light: '#d1fae5',
+      main: '#10b981',
+      dark: '#059669',
+    },
+    warning: {
+      light: '#fef3c7',
+      main: '#f59e0b',
+      dark: '#d97706',
+    },
+    error: {
+      light: '#fee2e2',
+      main: '#ef4444',
+      dark: '#dc2626',
+    },
+    info: {
+      light: '#dbeafe',
+      main: '#3b82f6',
+      dark: '#2563eb',
+    },
+    background: {
+      default: '#ffffff',
+      paper: '#f8fafc',
+      subtle: '#f1f5f9',
+      muted: '#f8fafc',
+      glass: 'rgba(255, 255, 255, 0.8)',
+    },
+    text: {
+      primary: '#0f172a',
+      secondary: '#475569',
+      muted: '#64748b',
+      disabled: '#94a3b8',
+    },
+    divider: '#e2e8f0',
+    border: {
+      light: '#f1f5f9',
+      default: '#e2e8f0',
+      dark: '#cbd5e1',
+    }
+  },
+  dark: {
+    primary: {
+      50: '#eef2ff',
+      100: '#e0e7ff',
+      200: '#c7d2fe',
+      300: '#a5b4fc',
+      400: '#818cf8',
+      500: '#6366f1',
+      600: '#4f46e5',
+      700: '#4338ca',
+      800: '#3730a3',
+      900: '#312e81',
+    },
+    accent: {
+      50: '#ecfeff',
+      100: '#cffafe',
+      200: '#a5f3fc',
+      300: '#67e8f9',
+      400: '#22d3ee',
+      500: '#06b6d4',
+      600: '#0891b2',
+      700: '#0e7490',
+      800: '#155e75',
+      900: '#164e63',
+    },
+    secondary: {
+      50: '#f8fafc',
+      100: '#f1f5f9',
+      200: '#e2e8f0',
+      300: '#cbd5e1',
+      400: '#94a3b8',
+      500: '#64748b',
+      600: '#475569',
+      700: '#334155',
+      800: '#1e293b',
+      900: '#0f172a',
+    },
+    success: {
+      light: '#064e3b',
+      main: '#10b981',
+      dark: '#d1fae5',
+    },
+    warning: {
+      light: '#78350f',
+      main: '#f59e0b',
+      dark: '#fef3c7',
+    },
+    error: {
+      light: '#7f1d1d',
+      main: '#ef4444',
+      dark: '#fee2e2',
+    },
+    info: {
+      light: '#1e40af',
+      main: '#3b82f6',
+      dark: '#dbeafe',
+    },
+    background: {
+      default: '#030712',
+      paper: '#0f172a',
+      subtle: '#1e293b',
+      muted: '#1e293b',
+      glass: 'rgba(15, 23, 42, 0.8)',
+    },
+    text: {
+      primary: '#f8fafc',
+      secondary: '#cbd5e1',
+      muted: '#94a3b8',
+      disabled: '#64748b',
+    },
+    divider: '#334155',
+    border: {
+      light: '#1e293b',
+      default: '#334155',
+      dark: '#475569',
+    }
+  },
+  effects: {
+    blur: {
+      sm: '4px',
+      md: '8px',
+      lg: '12px',
+      xl: '16px',
+    },
+    glow: {
+      sm: '0 0 4px',
+      md: '0 0 8px',
+      lg: '0 0 12px',
+      xl: '0 0 16px',
+    }
+  },
+  typography: {
+    fontFamily: {
+      sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+      display: ['Cal Sans', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+      mono: ['JetBrains Mono', 'monospace'],
+    },
+    weight: {
+      light: 300,
+      regular: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+      extrabold: 800,
+    },
+    size: {
+      xs: '0.75rem',
+      sm: '0.875rem',
+      base: '1rem',
+      lg: '1.125rem',
+      xl: '1.25rem',
+      '2xl': '1.5rem',
+      '3xl': '1.875rem',
+      '4xl': '2.25rem',
+      '5xl': '3rem',
+    },
+    lineHeight: {
+      none: 1,
+      tight: 1.25,
+      snug: 1.375,
+      normal: 1.5,
+      relaxed: 1.625,
+      loose: 2,
+    }
+  },
+  shadows: {
+    sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    DEFAULT: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+    md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+    glow: {
+      primary: '0 0 20px rgba(99, 102, 241, 0.35)',
+      accent: '0 0 20px rgba(6, 182, 212, 0.35)',
+    }
+  },
+  transitions: {
+    DEFAULT: '150ms cubic-bezier(0.4, 0, 0.2, 1)',
+    smooth: '300ms cubic-bezier(0.4, 0, 0.2, 1)',
+    bounce: '500ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+    spring: '500ms cubic-bezier(0.18, 1.25, 0.4, 1)',
+  }
+}; 

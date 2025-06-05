@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './InquiryManagement.css';
 import InquiryFilters from './InquiryFilters';
 import InquiryList from './InquiryList';
 import InquiryForm from './InquiryForm';
@@ -46,15 +45,15 @@ const InquiryManagement = () => {
   };
 
   return (
-    <div className="inquiry-management">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>Inquiry Management</h1>
-          <p>Track and manage student inquiries and follow-ups</p>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-800 mb-2">Inquiry Management</h1>
+          <p className="text-slate-500">Track and manage student inquiries and follow-ups</p>
         </div>
         <button 
-          className="button button-primary"
           onClick={() => setActiveTab('new')}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
         >
           New Inquiry
         </button>
@@ -62,38 +61,50 @@ const InquiryManagement = () => {
 
       <InquiryStats />
 
-      <div className="inquiry-container">
-        <div className="inquiry-sidebar">
+      <div className="grid grid-cols-1 lg:grid-cols-[250px,1fr] gap-6 mt-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm h-fit">
           <InquiryFilters 
             filters={filters} 
             onFilterChange={handleFilterChange} 
           />
         </div>
 
-        <div className="inquiry-content">
-          <div className="tab-navigation">
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex gap-4 mb-6 border-b border-slate-200 pb-4">
             <button
-              className={`tab-button ${activeTab === 'list' ? 'active' : ''}`}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'list' 
+                ? 'bg-blue-50 text-blue-600' 
+                : 'text-slate-600 hover:bg-slate-50'
+              }`}
               onClick={() => setActiveTab('list')}
             >
               Inquiry List
             </button>
             <button
-              className={`tab-button ${activeTab === 'details' ? 'active' : ''}`}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'details'
+                ? 'bg-blue-50 text-blue-600'
+                : 'text-slate-600 hover:bg-slate-50'
+              }`}
               onClick={() => setActiveTab('details')}
               disabled={!selectedInquiry}
             >
               Inquiry Details
             </button>
             <button
-              className={`tab-button ${activeTab === 'new' ? 'active' : ''}`}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activeTab === 'new'
+                ? 'bg-blue-50 text-blue-600'
+                : 'text-slate-600 hover:bg-slate-50'
+              }`}
               onClick={() => setActiveTab('new')}
             >
               New Inquiry
             </button>
           </div>
 
-          <div className="tab-content">
+          <div>
             {activeTab === 'list' && (
               <InquiryList
                 inquiries={mockInquiries}
@@ -102,34 +113,34 @@ const InquiryManagement = () => {
               />
             )}
             {activeTab === 'details' && selectedInquiry && (
-              <div className="inquiry-details">
-                <div className="details-grid">
-                  <div className="details-section">
-                    <h3>Inquiry Information</h3>
-                    <div className="info-grid">
-                      <div className="info-item">
-                        <label>Name</label>
-                        <p>{selectedInquiry.name}</p>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-slate-50 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Inquiry Information</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs text-slate-500 block mb-1">Name</label>
+                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.name}</p>
                       </div>
-                      <div className="info-item">
-                        <label>Email</label>
-                        <p>{selectedInquiry.email}</p>
+                      <div>
+                        <label className="text-xs text-slate-500 block mb-1">Email</label>
+                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.email}</p>
                       </div>
-                      <div className="info-item">
-                        <label>Phone</label>
-                        <p>{selectedInquiry.phone}</p>
+                      <div>
+                        <label className="text-xs text-slate-500 block mb-1">Phone</label>
+                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.phone}</p>
                       </div>
-                      <div className="info-item">
-                        <label>Program</label>
-                        <p>{selectedInquiry.program}</p>
+                      <div>
+                        <label className="text-xs text-slate-500 block mb-1">Program</label>
+                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.program}</p>
                       </div>
-                      <div className="info-item">
-                        <label>Source</label>
-                        <p>{selectedInquiry.source}</p>
+                      <div>
+                        <label className="text-xs text-slate-500 block mb-1">Source</label>
+                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.source}</p>
                       </div>
-                      <div className="info-item">
-                        <label>Counselor</label>
-                        <p>{selectedInquiry.counselor}</p>
+                      <div>
+                        <label className="text-xs text-slate-500 block mb-1">Counselor</label>
+                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.counselor}</p>
                       </div>
                     </div>
                   </div>

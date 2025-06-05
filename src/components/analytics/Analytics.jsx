@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Analytics.css';
+import { motion } from 'framer-motion';
 
 const Analytics = () => {
   // Mock data for demonstration
@@ -21,7 +21,7 @@ const Analytics = () => {
         registrations: 90,
         topSchools: [
           { name: 'Trinity College', inquiries: 40, applications: 32, registrations: 25 },
-          { name: 'St. Anthony\'s College', inquiries: 35, applications: 28, registrations: 20 },
+          { name: "St. Anthony's College", inquiries: 35, applications: 28, registrations: 20 },
           { name: 'Hillwood College', inquiries: 30, applications: 25, registrations: 18 }
         ]
       },
@@ -83,13 +83,16 @@ const Analytics = () => {
   const [dateRange, setDateRange] = useState('month');
 
   const renderRegionalOverview = () => (
-    <div className="regional-overview">
-      <div className="section-header">
-        <h3>Regional Performance</h3>
-        <div className="filters">
+    <div className="card backdrop-blur-lg">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 p-6 border-b border-secondary-200/10 dark:border-secondary-700/10">
+        <h3 className="text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+          Regional Performance
+        </h3>
+        <div className="flex flex-wrap gap-3">
           <select 
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}
+            className="input text-sm min-w-[160px]"
           >
             <option value="western">Western Province</option>
             <option value="central">Central Province</option>
@@ -98,6 +101,7 @@ const Analytics = () => {
           <select 
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
+            className="input text-sm min-w-[160px]"
           >
             <option value="month">Last Month</option>
             <option value="quarter">Last Quarter</option>
@@ -106,116 +110,156 @@ const Analytics = () => {
         </div>
       </div>
 
-      <div className="metrics-grid">
-        <div className="metric-card">
-          <span className="metric-value">{analyticsData.regionalStats[selectedRegion].inquiries}</span>
-          <span className="metric-label">Total Inquiries</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-value">{analyticsData.regionalStats[selectedRegion].applications}</span>
-          <span className="metric-label">Applications</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-value">{analyticsData.regionalStats[selectedRegion].registrations}</span>
-          <span className="metric-label">Registrations</span>
-        </div>
-        <div className="metric-card">
-          <span className="metric-value">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-6">
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          className="glass rounded-lg p-4 hover:glow-sm transition-all duration-200"
+        >
+          <span className="text-2xl font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent block mb-1">
+            {analyticsData.regionalStats[selectedRegion].inquiries}
+          </span>
+          <span className="text-sm text-secondary-500 dark:text-secondary-400">Total Inquiries</span>
+        </motion.div>
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          className="glass rounded-lg p-4 hover:glow-sm transition-all duration-200"
+        >
+          <span className="text-2xl font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent block mb-1">
+            {analyticsData.regionalStats[selectedRegion].applications}
+          </span>
+          <span className="text-sm text-secondary-500 dark:text-secondary-400">Applications</span>
+        </motion.div>
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          className="glass rounded-lg p-4 hover:glow-sm transition-all duration-200"
+        >
+          <span className="text-2xl font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent block mb-1">
+            {analyticsData.regionalStats[selectedRegion].registrations}
+          </span>
+          <span className="text-sm text-secondary-500 dark:text-secondary-400">Registrations</span>
+        </motion.div>
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          className="glass rounded-lg p-4 hover:glow-sm transition-all duration-200"
+        >
+          <span className="text-2xl font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent block mb-1">
             {Math.round((analyticsData.regionalStats[selectedRegion].registrations / 
               analyticsData.regionalStats[selectedRegion].applications) * 100)}%
           </span>
-          <span className="metric-label">Conversion Rate</span>
-        </div>
+          <span className="text-sm text-secondary-500 dark:text-secondary-400">Conversion Rate</span>
+        </motion.div>
       </div>
 
-      <div className="top-schools">
-        <h4>Top Performing Schools</h4>
-        <div className="schools-table">
-          <table>
-            <thead>
-              <tr>
-                <th>School Name</th>
-                <th>Inquiries</th>
-                <th>Applications</th>
-                <th>Registrations</th>
-                <th>Conversion</th>
-              </tr>
-            </thead>
-            <tbody>
-              {analyticsData.regionalStats[selectedRegion].topSchools.map(school => (
-                <tr key={school.name}>
-                  <td>{school.name}</td>
-                  <td>{school.inquiries}</td>
-                  <td>{school.applications}</td>
-                  <td>{school.registrations}</td>
-                  <td>
-                    {Math.round((school.registrations / school.applications) * 100)}%
-                  </td>
+      <div className="p-6">
+        <div className="glass rounded-lg p-4">
+          <h4 className="text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-4">Top Performing Schools</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-secondary-200/10 dark:border-secondary-700/10">
+                  <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">School Name</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Inquiries</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Applications</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Registrations</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Conversion</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-secondary-200/10 dark:divide-secondary-700/10">
+                {analyticsData.regionalStats[selectedRegion].topSchools.map(school => (
+                  <motion.tr 
+                    key={school.name} 
+                    whileHover={{ backgroundColor: 'rgba(99, 102, 241, 0.05)' }}
+                    className="transition-colors"
+                  >
+                    <td className="py-3 px-4 text-sm text-secondary-700 dark:text-secondary-300">{school.name}</td>
+                    <td className="py-3 px-4 text-sm text-secondary-700 dark:text-secondary-300">{school.inquiries}</td>
+                    <td className="py-3 px-4 text-sm text-secondary-700 dark:text-secondary-300">{school.applications}</td>
+                    <td className="py-3 px-4 text-sm text-secondary-700 dark:text-secondary-300">{school.registrations}</td>
+                    <td className="py-3 px-4 text-sm text-secondary-700 dark:text-secondary-300">
+                      {Math.round((school.registrations / school.applications) * 100)}%
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   );
 
   const renderCampaignPerformance = () => (
-    <div className="campaign-performance">
-      <h3>School Campaign Performance</h3>
-      <div className="campaign-cards">
+    <div className="card backdrop-blur-lg mt-6">
+      <div className="p-6 border-b border-secondary-200/10 dark:border-secondary-700/10">
+        <h3 className="text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+          School Campaign Performance
+        </h3>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
         {analyticsData.campaignPerformance.map(campaign => (
-          <div key={campaign.schoolName} className="campaign-card">
-            <div className="campaign-header">
-              <h4>{campaign.schoolName}</h4>
-              <span className="campaign-type">{campaign.campaignType}</span>
+          <motion.div 
+            key={campaign.schoolName} 
+            whileHover={{ scale: 1.02 }}
+            className="glass rounded-lg p-4 hover:glow-sm transition-all duration-200"
+          >
+            <div className="mb-4">
+              <h4 className="text-base font-medium text-secondary-800 dark:text-secondary-200">{campaign.schoolName}</h4>
+              <span className="text-sm text-secondary-500 dark:text-secondary-400">{campaign.campaignType}</span>
             </div>
-            <div className="campaign-details">
-              <div className="detail-row">
-                <span className="label">Campaign Period:</span>
-                <span className="value">{campaign.startDate} - {campaign.endDate}</span>
+            
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between text-sm">
+                <span className="text-secondary-500 dark:text-secondary-400">Campaign Period:</span>
+                <span className="text-secondary-700 dark:text-secondary-300">{campaign.startDate} - {campaign.endDate}</span>
               </div>
-              <div className="detail-row">
-                <span className="label">Campaign Spend:</span>
-                <span className="value">LKR {campaign.spend.toLocaleString()}</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-secondary-500 dark:text-secondary-400">Campaign Spend:</span>
+                <span className="text-secondary-700 dark:text-secondary-300">LKR {campaign.spend.toLocaleString()}</span>
               </div>
             </div>
-            <div className="campaign-metrics">
-              <div className="metric">
-                <span className="value">{campaign.metrics.leads}</span>
-                <span className="label">Leads</span>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center glass rounded-lg p-2">
+                <span className="block text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                  {campaign.metrics.leads}
+                </span>
+                <span className="text-xs text-secondary-500 dark:text-secondary-400">Leads</span>
               </div>
-              <div className="metric">
-                <span className="value">{campaign.metrics.applications}</span>
-                <span className="label">Applications</span>
+              <div className="text-center glass rounded-lg p-2">
+                <span className="block text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                  {campaign.metrics.applications}
+                </span>
+                <span className="text-xs text-secondary-500 dark:text-secondary-400">Applications</span>
               </div>
-              <div className="metric">
-                <span className="value">{campaign.metrics.registrations}</span>
-                <span className="label">Registrations</span>
+              <div className="text-center glass rounded-lg p-2">
+                <span className="block text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                  {campaign.metrics.registrations}
+                </span>
+                <span className="text-xs text-secondary-500 dark:text-secondary-400">Registrations</span>
               </div>
-              <div className="metric">
-                <span className="value">
+              <div className="text-center glass rounded-lg p-2">
+                <span className="block text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
                   {(campaign.metrics.leadsPerSpend).toFixed(4)}
                 </span>
-                <span className="label">Leads/LKR</span>
+                <span className="text-xs text-secondary-500 dark:text-secondary-400">Leads/LKR</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>
   );
 
   return (
-    <div className="analytics-page">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>Analytics Dashboard</h1>
-          <p>Track regional performance and campaign effectiveness</p>
-        </div>
+    <div className="p-6 space-dots">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent mb-2">
+          Analytics Dashboard
+        </h1>
+        <p className="text-secondary-500 dark:text-secondary-400">Track regional performance and campaign effectiveness</p>
       </div>
 
-      <div className="analytics-grid">
+      <div>
         {renderRegionalOverview()}
         {renderCampaignPerformance()}
       </div>

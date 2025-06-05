@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './CurrencySupport.css';
 
 const CurrencySupport = () => {
   // Mock data for demonstration
@@ -66,85 +65,91 @@ const CurrencySupport = () => {
   };
 
   const renderProgramFees = () => (
-    <div className="program-fees">
-      <h3>Program Fee Structure</h3>
-      <div className="currency-selector">
-        <label>Select Currency</label>
-        <select 
-          value={selectedCurrency}
-          onChange={(e) => setSelectedCurrency(e.target.value)}
-        >
-          {Object.keys(currencyData.exchangeRates).map(currency => (
-            <option key={currency} value={currency}>
-              {currency}
-            </option>
-          ))}
-        </select>
-      </div>
+    <div className="bg-white rounded-xl p-6 shadow-sm">
+      <h3 className="text-xl font-semibold text-slate-800 mb-6">Program Fee Structure</h3>
+      
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Select Currency</label>
+          <select 
+            value={selectedCurrency}
+            onChange={(e) => setSelectedCurrency(e.target.value)}
+            className="w-full px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+          >
+            {Object.keys(currencyData.exchangeRates).map(currency => (
+              <option key={currency} value={currency}>
+                {currency}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <div className="program-selector">
-        <label>Select Program</label>
-        <select
-          value={selectedProgram.id}
-          onChange={(e) => setSelectedProgram(
-            currencyData.programs.find(p => p.id === parseInt(e.target.value))
-          )}
-        >
-          {currencyData.programs.map(program => (
-            <option key={program.id} value={program.id}>
-              {program.name}
-            </option>
-          ))}
-        </select>
-      </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Select Program</label>
+          <select
+            value={selectedProgram.id}
+            onChange={(e) => setSelectedProgram(
+              currencyData.programs.find(p => p.id === parseInt(e.target.value))
+            )}
+            className="w-full px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+          >
+            {currencyData.programs.map(program => (
+              <option key={program.id} value={program.id}>
+                {program.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <div className="fee-breakdown">
-        <div className="fee-card">
-          <span className="fee-label">Application Fee</span>
-          <span className="fee-amount">
-            {formatCurrency(
-              convertCurrency(selectedProgram.fees.application, 'USD', selectedCurrency),
-              selectedCurrency
-            )}
-          </span>
-        </div>
-        <div className="fee-card">
-          <span className="fee-label">Registration Fee</span>
-          <span className="fee-amount">
-            {formatCurrency(
-              convertCurrency(selectedProgram.fees.registration, 'USD', selectedCurrency),
-              selectedCurrency
-            )}
-          </span>
-        </div>
-        <div className="fee-card">
-          <span className="fee-label">Tuition Fee</span>
-          <span className="fee-amount">
-            {formatCurrency(
-              convertCurrency(selectedProgram.fees.tuition, 'USD', selectedCurrency),
-              selectedCurrency
-            )}
-          </span>
-        </div>
-        <div className="fee-card total">
-          <span className="fee-label">Total Program Fee</span>
-          <span className="fee-amount">
-            {formatCurrency(
-              convertCurrency(selectedProgram.fees.total, 'USD', selectedCurrency),
-              selectedCurrency
-            )}
-          </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-slate-50 rounded-lg p-4">
+            <span className="block text-sm text-slate-500 mb-1">Application Fee</span>
+            <span className="text-lg font-semibold text-slate-800">
+              {formatCurrency(
+                convertCurrency(selectedProgram.fees.application, 'USD', selectedCurrency),
+                selectedCurrency
+              )}
+            </span>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-4">
+            <span className="block text-sm text-slate-500 mb-1">Registration Fee</span>
+            <span className="text-lg font-semibold text-slate-800">
+              {formatCurrency(
+                convertCurrency(selectedProgram.fees.registration, 'USD', selectedCurrency),
+                selectedCurrency
+              )}
+            </span>
+          </div>
+          <div className="bg-slate-50 rounded-lg p-4">
+            <span className="block text-sm text-slate-500 mb-1">Tuition Fee</span>
+            <span className="text-lg font-semibold text-slate-800">
+              {formatCurrency(
+                convertCurrency(selectedProgram.fees.tuition, 'USD', selectedCurrency),
+                selectedCurrency
+              )}
+            </span>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-4">
+            <span className="block text-sm text-blue-600 mb-1">Total Program Fee</span>
+            <span className="text-lg font-semibold text-blue-700">
+              {formatCurrency(
+                convertCurrency(selectedProgram.fees.total, 'USD', selectedCurrency),
+                selectedCurrency
+              )}
+            </span>
+          </div>
         </div>
       </div>
     </div>
   );
 
   const renderCurrencyConverter = () => (
-    <div className="currency-converter">
-      <h3>Currency Converter</h3>
-      <div className="converter-form">
-        <div className="form-group">
-          <label>Amount</label>
+    <div className="bg-white rounded-xl p-6 shadow-sm">
+      <h3 className="text-xl font-semibold text-slate-800 mb-6">Currency Converter</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Amount</label>
           <input
             type="number"
             value={customAmount}
@@ -155,23 +160,24 @@ const CurrencySupport = () => {
               );
             }}
             placeholder="Enter amount in USD"
+            className="w-full px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
           />
         </div>
-        <div className="form-group">
-          <label>Converted Amount</label>
-          <div className="converted-amount">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Converted Amount</label>
+          <div className="px-4 py-2 rounded-lg bg-slate-50 border border-slate-200 text-lg font-semibold text-slate-800">
             {formatCurrency(convertedAmount || 0, selectedCurrency)}
           </div>
         </div>
       </div>
 
-      <div className="exchange-rates">
-        <h4>Current Exchange Rates</h4>
-        <div className="rates-grid">
+      <div>
+        <h4 className="text-base font-medium text-slate-700 mb-4">Current Exchange Rates</h4>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {Object.entries(currencyData.exchangeRates).map(([currency, rate]) => (
-            <div key={currency} className="rate-card">
-              <span className="currency-code">{currency}</span>
-              <span className="exchange-rate">
+            <div key={currency} className="bg-slate-50 rounded-lg p-4">
+              <span className="block text-sm text-slate-500 mb-1">{currency}</span>
+              <span className="text-base font-medium text-slate-800">
                 {formatCurrency(rate, 'USD')}
               </span>
             </div>
@@ -182,15 +188,13 @@ const CurrencySupport = () => {
   );
 
   return (
-    <div className="currency-support-page">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>Currency Support</h1>
-          <p>View program fees in multiple currencies and perform conversions</p>
-        </div>
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-slate-800 mb-2">Currency Support</h1>
+        <p className="text-slate-500">View program fees in multiple currencies and perform conversions</p>
       </div>
 
-      <div className="currency-grid">
+      <div className="space-y-6">
         {renderProgramFees()}
         {renderCurrencyConverter()}
       </div>

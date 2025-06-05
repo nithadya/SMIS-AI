@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Enrollments.css';
 
 const Enrollments = () => {
   // Mock data for demonstration
@@ -68,62 +67,72 @@ const Enrollments = () => {
   const [newNote, setNewNote] = useState('');
 
   const renderProgressSteps = (steps) => (
-    <div className="progress-steps">
+    <div className="relative">
       {steps.map((step, index) => (
         <div 
           key={step.name} 
-          className={`progress-step ${step.completed ? 'completed' : ''}`}
+          className={`flex items-start mb-4 last:mb-0 ${index < steps.length - 1 ? 'pb-4' : ''}`}
         >
-          <div className="step-indicator">
+          <div className={`
+            flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+            ${step.completed 
+              ? 'bg-green-100 text-green-600 border-2 border-green-200' 
+              : 'bg-slate-100 text-slate-600 border-2 border-slate-200'
+            }
+          `}>
             {step.completed ? '✓' : index + 1}
           </div>
-          <div className="step-content">
-            <span className="step-name">{step.name}</span>
+          <div className="ml-4 flex-1">
+            <span className={`block text-sm font-medium ${step.completed ? 'text-green-600' : 'text-slate-600'}`}>
+              {step.name}
+            </span>
             {step.date && (
-              <span className="step-date">{step.date}</span>
+              <span className="text-xs text-slate-500">{step.date}</span>
             )}
           </div>
-          {index < steps.length - 1 && <div className="step-connector" />}
+          {index < steps.length - 1 && (
+            <div className="absolute left-4 top-8 bottom-0 w-[2px] bg-slate-200 -translate-x-1/2" />
+          )}
         </div>
       ))}
     </div>
   );
 
   const renderEnrollmentList = () => (
-    <div className="enrollment-list">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {enrollmentData.map(enrollment => (
         <div 
           key={enrollment.id}
-          className="enrollment-card"
+          className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => setActiveEnrollment(enrollment)}
         >
-          <div className="enrollment-header">
-            <h3>{enrollment.studentName}</h3>
-            <span className="enrollment-id">{enrollment.id}</span>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h3 className="text-lg font-medium text-slate-800">{enrollment.studentName}</h3>
+              <span className="text-sm text-slate-500">{enrollment.id}</span>
+            </div>
+            <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
+              {enrollment.status}
+            </span>
           </div>
           
-          <div className="enrollment-info">
-            <div className="info-row">
-              <span className="label">Program:</span>
-              <span className="value">{enrollment.program}</span>
+          <div className="space-y-3 mb-6">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Program:</span>
+              <span className="text-slate-700">{enrollment.program}</span>
             </div>
-            <div className="info-row">
-              <span className="label">Batch:</span>
-              <span className="value">{enrollment.batch}</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Batch:</span>
+              <span className="text-slate-700">{enrollment.batch}</span>
             </div>
-            <div className="info-row">
-              <span className="label">Counselor:</span>
-              <span className="value">{enrollment.counselor}</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Counselor:</span>
+              <span className="text-slate-700">{enrollment.counselor}</span>
             </div>
-            <div className="info-row">
-              <span className="label">Last Updated:</span>
-              <span className="value">{enrollment.lastUpdated}</span>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-500">Last Updated:</span>
+              <span className="text-slate-700">{enrollment.lastUpdated}</span>
             </div>
-          </div>
-
-          <div className="enrollment-status">
-            <span className="status-label">Current Stage:</span>
-            <span className="status-badge">{enrollment.status}</span>
           </div>
 
           {renderProgressSteps(enrollment.steps)}
@@ -136,62 +145,65 @@ const Enrollments = () => {
     if (!activeEnrollment) return null;
 
     return (
-      <div className="enrollment-details">
-        <div className="details-header">
-          <div>
-            <h2>{activeEnrollment.studentName}</h2>
-            <p className="enrollment-meta">
-              {activeEnrollment.program} • {activeEnrollment.batch}
-            </p>
+      <div className="bg-white rounded-xl shadow-sm">
+        <div className="p-6 border-b border-slate-200">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-800">{activeEnrollment.studentName}</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                {activeEnrollment.program} • {activeEnrollment.batch}
+              </p>
+            </div>
+            <button 
+              className="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              onClick={() => setActiveEnrollment(null)}
+            >
+              Back to List
+            </button>
           </div>
-          <button 
-            className="button button-secondary"
-            onClick={() => setActiveEnrollment(null)}
-          >
-            Back to List
-          </button>
         </div>
 
-        <div className="details-content">
-          <div className="details-section">
-            <h3>Enrollment Progress</h3>
+        <div className="p-6 space-y-8">
+          <div>
+            <h3 className="text-lg font-medium text-slate-800 mb-4">Enrollment Progress</h3>
             {renderProgressSteps(activeEnrollment.steps)}
           </div>
 
-          <div className="details-section">
-            <h3>Enrollment Information</h3>
-            <div className="info-grid">
-              <div className="info-item">
-                <span className="label">Enrollment ID</span>
-                <span className="value">{activeEnrollment.id}</span>
+          <div>
+            <h3 className="text-lg font-medium text-slate-800 mb-4">Enrollment Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-slate-50 rounded-lg p-4">
+                <span className="block text-sm text-slate-500 mb-1">Enrollment ID</span>
+                <span className="text-base font-medium text-slate-800">{activeEnrollment.id}</span>
               </div>
-              <div className="info-item">
-                <span className="label">Source</span>
-                <span className="value">{activeEnrollment.source}</span>
+              <div className="bg-slate-50 rounded-lg p-4">
+                <span className="block text-sm text-slate-500 mb-1">Source</span>
+                <span className="text-base font-medium text-slate-800">{activeEnrollment.source}</span>
               </div>
-              <div className="info-item">
-                <span className="label">Counselor</span>
-                <span className="value">{activeEnrollment.counselor}</span>
+              <div className="bg-slate-50 rounded-lg p-4">
+                <span className="block text-sm text-slate-500 mb-1">Counselor</span>
+                <span className="text-base font-medium text-slate-800">{activeEnrollment.counselor}</span>
               </div>
-              <div className="info-item">
-                <span className="label">Last Updated</span>
-                <span className="value">{activeEnrollment.lastUpdated}</span>
+              <div className="bg-slate-50 rounded-lg p-4">
+                <span className="block text-sm text-slate-500 mb-1">Last Updated</span>
+                <span className="text-base font-medium text-slate-800">{activeEnrollment.lastUpdated}</span>
               </div>
             </div>
           </div>
 
-          <div className="details-section">
-            <div className="section-header">
-              <h3>Notes & Updates</h3>
-              <div className="note-input">
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-slate-800">Notes & Updates</h3>
+              <div className="flex gap-2">
                 <input
                   type="text"
                   placeholder="Add a note..."
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
+                  className="px-4 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                 />
                 <button 
-                  className="button button-primary"
+                  className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
                   onClick={() => {
                     if (newNote.trim()) {
                       // Add note logic here
@@ -203,14 +215,14 @@ const Enrollments = () => {
                 </button>
               </div>
             </div>
-            <div className="notes-list">
+            <div className="space-y-4">
               {activeEnrollment.notes.map(note => (
-                <div key={note.id} className="note-item">
-                  <div className="note-header">
-                    <span className="note-author">{note.author}</span>
-                    <span className="note-date">{note.date}</span>
+                <div key={note.id} className="bg-slate-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-slate-700">{note.author}</span>
+                    <span className="text-xs text-slate-500">{note.date}</span>
                   </div>
-                  <p className="note-content">{note.content}</p>
+                  <p className="text-sm text-slate-600">{note.content}</p>
                 </div>
               ))}
             </div>
@@ -221,15 +233,13 @@ const Enrollments = () => {
   };
 
   return (
-    <div className="enrollments-page">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>Enrollment Management</h1>
-          <p>Track and manage student enrollment progress</p>
-        </div>
+    <div className="p-6">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-slate-800 mb-2">Enrollment Management</h1>
+        <p className="text-slate-500">Track and manage student enrollment progress</p>
       </div>
 
-      <div className="enrollments-container">
+      <div>
         {activeEnrollment ? renderEnrollmentDetails() : renderEnrollmentList()}
       </div>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './Batches.css';
+import { motion } from 'framer-motion';
 
 const Batches = () => {
   // Mock data for demonstration
@@ -47,25 +47,39 @@ const Batches = () => {
 
   const getCapacityColor = (enrolled, capacity) => {
     const percentage = (enrolled / capacity) * 100;
-    if (percentage >= 90) return '#ef4444';
-    if (percentage >= 70) return '#eab308';
-    return '#22c55e';
+    if (percentage >= 90) return 'from-error-main to-error-dark';
+    if (percentage >= 70) return 'from-warning-main to-warning-dark';
+    return 'from-success-main to-success-dark';
+  };
+
+  const getStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case 'upcoming':
+        return 'bg-info-light dark:bg-info-light/10 text-info-main border-info-main/20';
+      case 'open':
+        return 'bg-success-light dark:bg-success-light/10 text-success-main border-success-main/20';
+      case 'full':
+        return 'bg-warning-light dark:bg-warning-light/10 text-warning-main border-warning-main/20';
+      case 'closed':
+        return 'bg-secondary-100 dark:bg-secondary-100/10 text-secondary-600 dark:text-secondary-400 border-secondary-200/20 dark:border-secondary-700/20';
+      default:
+        return 'bg-secondary-100 dark:bg-secondary-100/10 text-secondary-600 dark:text-secondary-400 border-secondary-200/20 dark:border-secondary-700/20';
+    }
   };
 
   const renderCapacityIndicator = (batch) => {
     const percentage = (batch.enrolled / batch.capacity) * 100;
     return (
-      <div className="capacity-indicator">
-        <div className="capacity-bar">
-          <div 
-            className="capacity-fill"
-            style={{ 
-              width: `${percentage}%`,
-              backgroundColor: getCapacityColor(batch.enrolled, batch.capacity)
-            }}
+      <div className="space-y-1">
+        <div className="h-2 bg-secondary-100 dark:bg-secondary-800 rounded-full overflow-hidden">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${percentage}%` }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className={`h-full bg-gradient-to-r ${getCapacityColor(batch.enrolled, batch.capacity)} transition-all duration-300`}
           />
         </div>
-        <span className="capacity-text">
+        <span className="text-xs text-secondary-600 dark:text-secondary-400">
           {batch.enrolled}/{batch.capacity} Enrolled
         </span>
       </div>
@@ -73,110 +87,142 @@ const Batches = () => {
   };
 
   const renderCalendarView = () => (
-    <div className="calendar-view">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {batchData.map(batch => (
-        <div 
+        <motion.div 
           key={batch.id}
-          className="batch-card"
+          whileHover={{ scale: 1.02 }}
+          className="card glass hover:glow-sm transition-all duration-200 cursor-pointer"
           onClick={() => setSelectedBatch(batch)}
         >
-          <div className="batch-header">
-            <h3>{batch.program}</h3>
-            <span className={`status-badge ${batch.status.toLowerCase()}`}>
-              {batch.status}
-            </span>
-          </div>
-          
-          <div className="batch-details">
-            <div className="detail-item">
-              <span className="label">Batch ID:</span>
-              <span className="value">{batch.id}</span>
+          <div className="p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent mb-1">
+                  {batch.id}
+                </h3>
+                <p className="text-sm text-secondary-600 dark:text-secondary-400">{batch.program}</p>
+              </div>
+              <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(batch.status)}`}>
+                {batch.status}
+              </span>
             </div>
-            <div className="detail-item">
-              <span className="label">Schedule:</span>
-              <span className="value">{batch.schedule}</span>
-            </div>
-            <div className="detail-item">
-              <span className="label">Time:</span>
-              <span className="value">{batch.timeSlot}</span>
-            </div>
-            <div className="detail-item">
-              <span className="label">Lecturer:</span>
-              <span className="value">{batch.lecturer}</span>
-            </div>
-          </div>
 
-          {renderCapacityIndicator(batch)}
-        </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">Start Date</p>
+                  <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.startDate}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">End Date</p>
+                  <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.endDate}</p>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">Schedule</p>
+                <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.schedule}</p>
+                <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.timeSlot}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">Lecturer</p>
+                <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.lecturer}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-2">Capacity</p>
+                {renderCapacityIndicator(batch)}
+              </div>
+            </div>
+          </div>
+        </motion.div>
       ))}
     </div>
   );
 
   const renderListView = () => (
-    <div className="list-view">
-      <table className="batch-table">
-        <thead>
-          <tr>
-            <th>Batch ID</th>
-            <th>Program</th>
-            <th>Schedule</th>
-            <th>Time Slot</th>
-            <th>Lecturer</th>
-            <th>Capacity</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {batchData.map(batch => (
-            <tr 
-              key={batch.id}
-              onClick={() => setSelectedBatch(batch)}
-              className="batch-row"
-            >
-              <td>{batch.id}</td>
-              <td>{batch.program}</td>
-              <td>{batch.schedule}</td>
-              <td>{batch.timeSlot}</td>
-              <td>{batch.lecturer}</td>
-              <td>{renderCapacityIndicator(batch)}</td>
-              <td>
-                <span className={`status-badge ${batch.status.toLowerCase()}`}>
-                  {batch.status}
-                </span>
-              </td>
+    <div className="card glass overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-secondary-200/10 dark:border-secondary-700/10">
+              <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Batch ID</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Program</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Schedule</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Time Slot</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Lecturer</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Capacity</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-secondary-500 dark:text-secondary-400 uppercase tracking-wider">Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-secondary-200/10 dark:divide-secondary-700/10">
+            {batchData.map(batch => (
+              <motion.tr 
+                key={batch.id}
+                onClick={() => setSelectedBatch(batch)}
+                whileHover={{ backgroundColor: 'rgba(99, 102, 241, 0.05)' }}
+                className="transition-colors cursor-pointer"
+              >
+                <td className="py-4 px-4 text-sm">
+                  <span className="font-medium bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                    {batch.id}
+                  </span>
+                </td>
+                <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.program}</td>
+                <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.schedule}</td>
+                <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.timeSlot}</td>
+                <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.lecturer}</td>
+                <td className="py-4 px-4 w-48">{renderCapacityIndicator(batch)}</td>
+                <td className="py-4 px-4">
+                  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(batch.status)}`}>
+                    {batch.status}
+                  </span>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 
   return (
-    <div className="batches-page">
-      <div className="page-header">
-        <div className="header-content">
-          <h1>Batch Schedule</h1>
-          <p>View and manage upcoming batch schedules and enrollment status</p>
-        </div>
-        <div className="view-toggle">
-          <button 
-            className={`toggle-button ${activeView === 'calendar' ? 'active' : ''}`}
+    <div className="p-6 space-dots">
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent mb-2">
+          Batch Management
+        </h1>
+        <p className="text-secondary-500 dark:text-secondary-400">Manage and monitor batch schedules and capacity</p>
+      </div>
+
+      <div className="flex justify-end mb-6">
+        <div className="inline-flex rounded-lg glass p-1">
+          <button
             onClick={() => setActiveView('calendar')}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+              activeView === 'calendar'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300'
+            }`}
           >
             Calendar View
           </button>
-          <button 
-            className={`toggle-button ${activeView === 'list' ? 'active' : ''}`}
+          <button
             onClick={() => setActiveView('list')}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+              activeView === 'list'
+                ? 'bg-primary-500 text-white shadow-sm'
+                : 'text-secondary-600 dark:text-secondary-400 hover:text-secondary-700 dark:hover:text-secondary-300'
+            }`}
           >
             List View
           </button>
         </div>
       </div>
 
-      <div className="batches-container">
-        {activeView === 'calendar' ? renderCalendarView() : renderListView()}
-      </div>
+      {activeView === 'calendar' ? renderCalendarView() : renderListView()}
     </div>
   );
 };

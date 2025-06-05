@@ -1,14 +1,29 @@
 import React from 'react';
+import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import Dashboard from './components/dashboard/Dashboard';
-import './App.css';
+import AppRoutes from './routes';
+import { ThemeProvider } from './context/ThemeContext';
 
-function App() {
+// Create router configuration
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      {
+        path: '*',
+        element: <AppRoutes />
+      }
+    ]
+  }
+]);
+
+const App = () => {
   return (
-    <Layout>
-      <Dashboard />
-    </Layout>
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
   );
-}
+};
 
 export default App;
