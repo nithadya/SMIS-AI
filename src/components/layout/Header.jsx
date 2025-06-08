@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import { showToast } from '../common/Toast';
 
 // Icons
@@ -16,6 +17,7 @@ import {
 
 const Header = ({ toggleSidebar }) => {
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { isDark, toggleTheme } = useTheme();
@@ -30,8 +32,10 @@ const Header = ({ toggleSidebar }) => {
   };
 
   const handleLogout = () => {
+    logout();
     showToast.success('Logged out successfully');
-    navigate('/login');
+    navigate('/', { replace: true });
+    setShowUserMenu(false);
   };
 
   const menuItems = [
@@ -39,6 +43,22 @@ const Header = ({ toggleSidebar }) => {
     { label: 'Account Settings', onClick: () => navigate('/account') },
     { label: 'Logout', onClick: handleLogout, danger: true },
   ];
+
+  // Get initials from user email
+  const getInitials = () => {
+    if (!user?.email) return 'U';
+    return user.email
+      .split('@')[0]
+      .split('.')
+      .map(part => part[0].toUpperCase())
+      .join('');
+  };
+
+  // Get user role with first letter capitalized
+  const getUserRole = () => {
+    if (!user?.role) return 'User';
+    return user.role.charAt(0).toUpperCase() + user.role.slice(1);
+  };
 
   return (
     <header className={`fixed top-0 right-0 h-16 z-30 left-[256px] group-[.sidebar-collapsed]/sidebar:left-[80px] transition-all duration-300 glass`}>
@@ -104,17 +124,17 @@ const Header = ({ toggleSidebar }) => {
             >
               <div className="relative">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-400 to-primary-600 text-white flex items-center justify-center text-sm font-semibold animate-shimmer overflow-hidden">
-                  JD
+                  {getInitials()}
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success-main rounded-full border-2 border-white dark:border-secondary-800" />
               </div>
               <div className="hidden sm:block">
                 <p className={`text-sm font-medium ${
                   isDark ? 'text-secondary-200' : 'text-secondary-900'
-                }`}>John Doe</p>
+                }`}>{user?.email?.split('@')[0] || 'User'}</p>
                 <p className={`text-xs ${
                   isDark ? 'text-secondary-400' : 'text-secondary-500'
-                }`}>Administrator</p>
+                }`}>{getUserRole()}</p>
               </div>
               <ChevronDownIcon className={`w-4 h-4 ${isDark ? 'text-secondary-400' : 'text-secondary-600'}`} />
             </motion.button>
