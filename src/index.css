@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,21 +10,99 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Ant Design dark mode overrides */
+  .dark {
+    --ant-primary-color: #0c87eb;
+    --ant-primary-color-hover: #36a6fa;
+    --ant-primary-color-active: #006bc9;
+    --ant-primary-color-outline: rgba(12, 135, 235, 0.2);
+    --ant-primary-1: #f0f7ff;
+    --ant-primary-2: #e0eefe;
+    --ant-primary-3: #b9ddfe;
+    --ant-primary-4: #7cc2fd;
+    --ant-primary-5: #36a6fa;
+    --ant-primary-6: #0c87eb;
+    --ant-primary-7: #006bc9;
+    
+    color-scheme: dark;
+  }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-500/20 transition-colors;
+    @apply px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 
+           focus:ring-2 focus:ring-primary-500/20 transition-colors;
   }
   
   .input-primary {
-    @apply w-full px-4 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 
-      placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 
-      focus:ring-blue-500/10 transition-all duration-200;
+    @apply w-full px-4 py-2 rounded-lg border border-secondary-200 text-sm text-secondary-600 
+           placeholder-secondary-400 focus:outline-none focus:border-primary-500 focus:ring-2 
+           focus:ring-primary-500/10 transition-all duration-200
+           dark:border-secondary-700 dark:text-secondary-300 dark:placeholder-secondary-500
+           dark:bg-secondary-800;
   }
   
   .card {
-    @apply bg-white rounded-xl shadow-sm p-6;
+    @apply bg-white dark:bg-secondary-800 rounded-xl shadow-sm p-6;
+  }
+
+  /* Ant Design component overrides */
+  .ant-btn {
+    @apply shadow-none;
+  }
+
+  .ant-table {
+    @apply bg-transparent;
+  }
+
+  .ant-table-thead > tr > th {
+    @apply bg-transparent border-secondary-200 dark:border-secondary-700 !important;
+  }
+
+  .ant-table-tbody > tr > td {
+    @apply border-secondary-200 dark:border-secondary-700;
+  }
+
+  .ant-select-selector {
+    @apply shadow-none !important;
+  }
+
+  .ant-picker {
+    @apply shadow-none;
+  }
+
+  /* Dark mode overrides */
+  .dark .ant-table {
+    @apply bg-transparent;
+  }
+
+  .dark .ant-table-thead > tr > th {
+    @apply bg-transparent text-secondary-300;
+  }
+
+  .dark .ant-table-tbody > tr > td {
+    @apply text-secondary-300;
+  }
+
+  .dark .ant-table-tbody > tr:hover > td {
+    @apply bg-secondary-800/50;
+  }
+
+  .dark .ant-select-selector {
+    @apply bg-secondary-800 border-secondary-700;
+  }
+
+  .dark .ant-picker {
+    @apply bg-secondary-800 border-secondary-700;
+  }
+
+  .dark .ant-picker-input > input {
+    @apply text-secondary-300;
+  }
+
+  .dark .ant-select-selection-item {
+    @apply text-secondary-300;
   }
 }
 
@@ -35,5 +115,19 @@
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Glass effect utilities */
+  .glass {
+    @apply bg-white/10 dark:bg-secondary-900/50 backdrop-blur-sm border border-white/10 dark:border-secondary-800/10;
+  }
+
+  .glass-hover {
+    @apply hover:bg-white/20 dark:hover:bg-secondary-800/50 transition-colors duration-200;
+  }
+
+  /* Gradient animations */
+  .animate-gradient {
+    @apply bg-gradient-to-r from-primary-500 via-accent-500 to-primary-500 bg-[length:200%_auto] animate-shimmer;
   }
 }

@@ -13,8 +13,12 @@ const LoadingFallback = () => (
 
 // Lazy load components
 const Dashboard = React.lazy(() => import('../components/dashboard/Dashboard'));
+const Dashboard2 = React.lazy(() => import('../components/dashboard/Dashboard2'));
 const StudentManagement = React.lazy(() => import('../components/students/StudentManagement'));
+const StudentManagement2 = React.lazy(() => import('../components/students/StudentManagement2'));
+const CounselorPerformance = React.lazy(() => import('../components/counselor/CounselorPerformance'));
 const InquiryManagement = React.lazy(() => import('../components/inquiry/InquiryManagement'));
+const AdvancedInquiryManagement = React.lazy(() => import('../components/inquiry/AdvancedInquiryManagement'));
 const Programs = React.lazy(() => import('../components/programs/Programs'));
 const Batches = React.lazy(() => import('../components/batches/Batches'));
 const Enrollments = React.lazy(() => import('../components/enrollments/Enrollments'));
@@ -34,8 +38,12 @@ const AppRoutes = () => {
 
         {/* Main routes */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard2" element={<Dashboard2 />} />
         <Route path="/student-management/*" element={<StudentManagement />} />
+        <Route path="/student-management2/*" element={<StudentManagement2 />} />
+        <Route path="/counselor-performance/*" element={<CounselorPerformance />} />
         <Route path="/inquiry-management/*" element={<InquiryManagement />} />
+        <Route path="/advanced-inquiry/*" element={<AdvancedInquiryManagement />} />
         <Route path="/programs/*" element={<Programs />} />
         <Route path="/batches/*" element={<Batches />} />
         <Route path="/enrollments/*" element={<Enrollments />} />

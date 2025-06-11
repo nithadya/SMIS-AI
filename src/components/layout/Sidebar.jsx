@@ -1,16 +1,19 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { UserAddOutlined } from '@ant-design/icons';
+import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = ({ isCollapsed }) => {
   const location = useLocation();
+  const { user } = useAuth();
 
-  const navSections = [
+  const marketingNavSections = [
     {
       title: 'Overview',
       items: [
         { title: 'Dashboard', icon: '📊', path: '/dashboard' },
-        { title: 'Analytics', icon: '📈', path: '/analytics' },
+        { title: 'Analytics', icon: '📊', path: '/analytics' },
       ]
     },
     {
@@ -40,6 +43,43 @@ const Sidebar = ({ isCollapsed }) => {
     }
   ];
 
+  const managerNavSections = [
+    {
+      title: 'Overview',
+      items: [
+        { title: 'Management Overview', icon: '📈', path: '/dashboard2' },
+        { title: 'Analytics', icon: '📊', path: '/analytics' },
+      ]
+    },
+    {
+      title: 'Student Management',
+      items: [
+        { title: 'Comprehensive View', icon: '📚', path: '/student-management2' },
+        { title: 'Advanced Inquiries', icon: '📈', path: '/advanced-inquiry' },
+        {
+          title: 'Enrollment & Registration 2',
+          key: 'enrollment2',
+          icon: <UserAddOutlined />,
+          path: '/enrollment-registration2'
+        },
+      ]
+    },
+    {
+      title: 'Staff Management',
+      items: [
+        { title: 'Counselor Performance', icon: '👥', path: '/counselor-performance' },
+      ]
+    },
+    {
+      title: 'Academic',
+      items: [
+        { title: 'Program Management', icon: '📋', path: '/programs2' },
+      ]
+    },
+  ];
+
+  const navSections = user?.role === 'manager' ? managerNavSections : marketingNavSections;
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -66,7 +106,7 @@ const Sidebar = ({ isCollapsed }) => {
         }
       `}
     >
-      <span className="text-xl group-hover:scale-110 transition-transform">{item.icon}</span>
+      <span className="text-xl group-hover:scale-110 transition-transform">{typeof item.icon === 'string' ? item.icon : React.cloneElement(item.icon)}</span>
       {!isCollapsed && (
         <motion.span 
           initial={false}

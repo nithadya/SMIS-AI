@@ -1,54 +1,24 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export const MagicCard = ({ 
-  children, 
-  className = '', 
-  spotlightColor = 'rgba(120, 119, 198, 0.1)',
-  hoverScale = 1.02,
-  showSpotlight = true,
-  showGlow = true,
-  showGradient = true,
-  showShineBorder = true
-}) => {
-  const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e) => {
-    if (!showSpotlight) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    setMousePosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
-  };
-
+export const MagicCard = ({ children, className = '', onClick }) => {
   return (
     <motion.div
-      whileHover={{ scale: hoverScale }}
+      onClick={onClick}
       className={`
         relative overflow-hidden rounded-xl
-        ${showGlow ? 'hover:glow-sm' : ''}
+        bg-white/10 dark:bg-secondary-900/50
+        backdrop-blur-sm border border-secondary-200/10 dark:border-secondary-800/10
+        shadow-sm hover:shadow-md
+        transition-all duration-200
+        ${onClick ? 'cursor-pointer' : ''}
         ${className}
       `}
-      onMouseMove={handleMouseMove}
+      whileHover={{ scale: onClick ? 1.01 : 1 }}
+      whileTap={{ scale: onClick ? 0.99 : 1 }}
     >
-      {showSpotlight && (
-        <div
-          className="pointer-events-none absolute -inset-px opacity-0 transition duration-300 group-hover:opacity-100"
-          style={{
-            background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, ${spotlightColor}, transparent 40%)`,
-          }}
-        />
-      )}
-      {showGradient && (
-        <div className="absolute inset-0 bg-gradient-to-r from-primary-400/10 to-accent-400/10 animate-gradient-x" />
-      )}
-      <div className="relative z-10">
-        {children}
-      </div>
-      {showShineBorder && (
-        <div className="absolute inset-0 pointer-events-none shine-border" />
-      )}
+      {children}
+      <div className="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-br from-primary-500/5 via-accent-500/5 to-primary-500/5" />
     </motion.div>
   );
 }; 
