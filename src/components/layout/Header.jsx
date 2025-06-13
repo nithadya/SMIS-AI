@@ -128,14 +128,18 @@ const Header = ({ toggleSidebar }) => {
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-success-main rounded-full border-2 border-white dark:border-secondary-800" />
               </div>
-              <div className="hidden sm:block">
-                <p className={`text-sm font-medium ${
-                  isDark ? 'text-secondary-200' : 'text-secondary-900'
-                }`}>{user?.email?.split('@')[0] || 'User'}</p>
-                <p className={`text-xs ${
-                  isDark ? 'text-secondary-400' : 'text-secondary-500'
-                }`}>{getUserRole()}</p>
-              </div>
+              <div className="hidden sm:block leading-tight">
+  <p className={`text-sm font-medium mb-0 ${
+    isDark ? 'text-secondary-200' : 'text-secondary-900'
+  }`}>
+    {user?.email?.split('@')[0] || 'User'}
+  </p>
+  <p className={`text-xs ${
+    isDark ? 'text-secondary-400' : 'text-secondary-500'
+  }`}>
+    {getUserRole()}
+  </p>
+</div>
               <ChevronDownIcon className={`w-4 h-4 ${isDark ? 'text-secondary-400' : 'text-secondary-600'}`} />
             </motion.button>
 
