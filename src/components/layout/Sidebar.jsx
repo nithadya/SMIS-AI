@@ -12,7 +12,7 @@ const Sidebar = ({ isCollapsed }) => {
     {
       title: 'Overview',
       items: [
-        { title: 'Dashboard', icon: '📊', path: '/dashboard' },
+        { title: 'Dashboard', icon: '📊', path: '/' },
         { title: 'Analytics', icon: '📊', path: '/analytics' },
       ]
     },
@@ -47,7 +47,7 @@ const Sidebar = ({ isCollapsed }) => {
     {
       title: 'Overview',
       items: [
-        { title: 'Management Overview', icon: '📈', path: '/dashboard2' },
+        { title: 'Management Overview', icon: '📈', path: '/' },
         { title: 'Analytics', icon: '📊', path: '/analytics' },
       ]
     },

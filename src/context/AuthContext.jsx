@@ -1,39 +1,55 @@
 import React, { createContext, useContext, useState } from 'react';
+import { supabase } from '../lib/supabase';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext({});
 
-const users = {
-  'manager@gmail.com': { password: 'manager123', role: 'manager' },
-  'marketing@gmail.com': { password: 'marketing123', role: 'marketing' }
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  const login = (email, password) => {
-    const userInfo = users[email];
-    if (userInfo && userInfo.password === password) {
-      setUser({ email, role: userInfo.role });
-      return true;
+  const login = async (email, password) => {
+    try {
+      // Check email and password directly in the database
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+      if (error || !userData) {
+        console.error('Login error:', error?.message || 'Invalid credentials');
+        return { success: false, error: 'Invalid email or password' };
+      }
+
+      // Set user data in state
+      setUser(userData);
+
+      // Return success and redirect to root path
+      return { 
+        success: true,
+        redirectTo: '/'  // This will show the correct dashboard based on role
+      };
+    } catch (error) {
+      console.error('Login error:', error.message);
+      return { success: false, error: 'An unexpected error occurred' };
     }
-    return false;
   };
 
   const logout = () => {
     setUser(null);
   };
 
+  const value = {
+    user,
+    login,
+    logout
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }; 

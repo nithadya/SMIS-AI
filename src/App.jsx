@@ -23,11 +23,12 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import EnrollmentRegistrationManagement2 from './components/enrollments/EnrollmentRegistrationManagement2';
+import Setup from './pages/Setup';
 
 // Create router configuration with basename
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/login',
     element: <Login />
   },
   {
@@ -39,12 +40,10 @@ const router = createBrowserRouter([
     ),
     children: [
       {
-        path: 'dashboard',
-        element: <Dashboard />
-      },
-      {
-        path: 'dashboard2',
-        element: <Dashboard2 />
+        path: '/',
+        element: <ProtectedRoute>
+          {({ user }) => user?.role === 'manager' ? <Dashboard2 /> : <Dashboard />}
+        </ProtectedRoute>
       },
       {
         path: 'analytics',
@@ -108,11 +107,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'enrollment-registration2',
-        element: (
-          <ProtectedRoute>
-            <EnrollmentRegistrationManagement2 />
-          </ProtectedRoute>
-        )
+        element: <EnrollmentRegistrationManagement2 />
       }
     ]
   },

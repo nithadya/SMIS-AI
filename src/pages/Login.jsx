@@ -105,17 +105,27 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
     
-    if (login(email, password)) {
-      navigate('/dashboard');
-    } else {
-      setError('Invalid email or password');
+    try {
+      const { success, error: loginError, redirectTo } = await login(email, password);
+      if (success && redirectTo) {
+        navigate(redirectTo);
+      } else {
+        setError(loginError || 'Invalid email or password');
+      }
+    } catch (err) {
+      setError('An error occurred during login. Please try again.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,6 +140,7 @@ const Login = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={loading}
           />
           <Input
             type="password"
@@ -137,8 +148,11 @@ const Login = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={loading}
           />
-          <Button type="submit">Login</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
+          </Button>
           {error && <ErrorMessage>{error}</ErrorMessage>}
         </form>
       </LoginCard>
