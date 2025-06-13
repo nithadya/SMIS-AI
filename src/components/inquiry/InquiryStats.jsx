@@ -1,34 +1,69 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
-const InquiryStats = () => {
-  // Mock data for demonstration
-  const stats = {
-    total: {
-      count: 156,
-      trend: '+12%'
-    },
-    new: {
-      count: 45,
-      trend: '+8%'
-    },
-    followUp: {
-      count: 78,
-      trend: '+15%'
-    },
-    converted: {
-      count: 23,
-      trend: '+5%'
-    }
-  };
+const InquiryStats = ({ inquiries = [] }) => {
+  const stats = useMemo(() => {
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    const lastMonthInquiries = inquiries.filter(inq => new Date(inq.created_at) >= lastMonth);
+    const prevMonthInquiries = inquiries.filter(inq => {
+      const date = new Date(inq.created_at);
+      return date >= new Date(now.getFullYear(), now.getMonth() - 2, now.getDate()) &&
+             date < lastMonth;
+    });
 
-  const conversionRates = {
-    overall: 68,
-    web: 72,
-    phone: 65,
-    email: 58,
-    walkIn: 85
-  };
+    const calculateGrowth = (current, previous) => {
+      if (previous === 0) return current > 0 ? '+100%' : '0%';
+      const growth = ((current - previous) / previous) * 100;
+      return growth > 0 ? `+${growth.toFixed(0)}%` : `${growth.toFixed(0)}%`;
+    };
+
+    const bySource = inquiries.reduce((acc, inq) => {
+      const sourceName = inq.sources?.name || 'Unknown';
+      acc[sourceName] = (acc[sourceName] || 0) + 1;
+      return acc;
+    }, {});
+
+    const totalConverted = inquiries.filter(inq => inq.status === 'converted').length;
+    const totalInquiries = inquiries.length;
+    const conversionRate = totalInquiries > 0 
+      ? ((totalConverted / totalInquiries) * 100).toFixed(1)
+      : 0;
+
+    const sourceConversionRates = Object.entries(bySource).reduce((acc, [source, count]) => {
+      const convertedFromSource = inquiries.filter(
+        inq => inq.sources?.name === source && inq.status === 'converted'
+      ).length;
+      acc[source] = count > 0 ? ((convertedFromSource / count) * 100).toFixed(1) : 0;
+      return acc;
+    }, {});
+
+    return {
+      total: {
+        count: inquiries.length,
+        trend: calculateGrowth(lastMonthInquiries.length, prevMonthInquiries.length)
+      },
+      new: {
+        count: inquiries.filter(inq => inq.status === 'new').length,
+        trend: '+0%'
+      },
+      followUp: {
+        count: inquiries.filter(inq => inq.status === 'follow-up').length,
+        trend: '+0%'
+      },
+      converted: {
+        count: totalConverted,
+        trend: '+0%'
+      },
+      conversionRates: {
+        overall: parseFloat(conversionRate),
+        ...Object.entries(sourceConversionRates).reduce((acc, [key, value]) => {
+          acc[key.toLowerCase().replace(/\s+/g, '')] = parseFloat(value);
+          return acc;
+        }, {})
+      }
+    };
+  }, [inquiries]);
 
   const StatCard = ({ title, count, trend }) => (
     <motion.div 
@@ -69,39 +104,55 @@ const InquiryStats = () => {
   );
 
   return (
-    <div className="p-6">
-      <motion.h2 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-8 bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent"
-      >
-        Inquiry Statistics
-      </motion.h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard title="Total Inquiries" count={stats.total.count} trend={stats.total.trend} />
-        <StatCard title="New Inquiries" count={stats.new.count} trend={stats.new.trend} />
-        <StatCard title="Follow-ups" count={stats.followUp.count} trend={stats.followUp.trend} />
-        <StatCard title="Converted" count={stats.converted.count} trend={stats.converted.trend} />
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <StatCard 
+        title="Total Inquiries" 
+        count={stats.total.count}
+        trend={stats.total.trend}
+      />
+      <StatCard 
+        title="New Inquiries" 
+        count={stats.new.count}
+        trend={stats.new.trend}
+      />
+      <StatCard 
+        title="Follow-ups" 
+        count={stats.followUp.count}
+        trend={stats.followUp.trend}
+      />
+      <StatCard 
+        title="Converted" 
+        count={stats.converted.count}
+        trend={stats.converted.trend}
+      />
 
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="glass p-6 rounded-xl"
-      >
-        <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
-          Conversion Rates
-        </h3>
-        <div className="space-y-4">
-          <ConversionBar label="Overall" rate={conversionRates.overall} />
-          <ConversionBar label="Web Inquiries" rate={conversionRates.web} />
-          <ConversionBar label="Phone Inquiries" rate={conversionRates.phone} />
-          <ConversionBar label="Email Inquiries" rate={conversionRates.email} />
-          <ConversionBar label="Walk-in Inquiries" rate={conversionRates.walkIn} />
+      <div className="md:col-span-2 lg:col-span-4">
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Conversion Rates</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <ConversionBar label="Overall" rate={stats.conversionRates.overall} />
+              {stats.conversionRates.webform && (
+                <ConversionBar label="Web Form" rate={stats.conversionRates.webform} />
+              )}
+              {stats.conversionRates.phone && (
+                <ConversionBar label="Phone" rate={stats.conversionRates.phone} />
+              )}
+            </div>
+            <div>
+              {stats.conversionRates.email && (
+                <ConversionBar label="Email" rate={stats.conversionRates.email} />
+              )}
+              {stats.conversionRates.walkin && (
+                <ConversionBar label="Walk-in" rate={stats.conversionRates.walkin} />
+              )}
+              {stats.conversionRates.socialmedia && (
+                <ConversionBar label="Social Media" rate={stats.conversionRates.socialmedia} />
+              )}
+            </div>
+          </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

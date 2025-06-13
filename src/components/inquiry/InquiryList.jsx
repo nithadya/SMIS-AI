@@ -2,7 +2,7 @@ import React from 'react';
 
 const InquiryList = ({ inquiries, onSelect, filters }) => {
   const getStatusClass = (status) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'new':
         return 'bg-blue-50 text-blue-600 border-blue-200';
       case 'contacted':
@@ -19,6 +19,7 @@ const InquiryList = ({ inquiries, onSelect, filters }) => {
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -28,18 +29,18 @@ const InquiryList = ({ inquiries, onSelect, filters }) => {
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b border-slate-200">
-            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
-            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
-            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Program</th>
-            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Source</th>
-            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Counselor</th>
-            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Last Contact</th>
-            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Next Follow-up</th>
-            <th className="py-3 px-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+      <table className="min-w-full divide-y divide-slate-200">
+        <thead className="bg-slate-50">
+          <tr>
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Student</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Program</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Source</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Counselor</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Last Contact</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Next Follow-up</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
@@ -48,23 +49,35 @@ const InquiryList = ({ inquiries, onSelect, filters }) => {
               key={inquiry.id}
               className="hover:bg-slate-50 transition-colors"
             >
-              <td className="py-4 px-4 text-sm text-slate-600">{inquiry.id}</td>
+              <td className="py-4 px-4 text-sm text-slate-600">
+                {inquiry.id.substring(0, 8)}
+              </td>
               <td className="py-4 px-4">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-slate-700">{inquiry.name}</span>
                   <span className="text-xs text-slate-500">{inquiry.email}</span>
                 </div>
               </td>
-              <td className="py-4 px-4 text-sm text-slate-600">{inquiry.program}</td>
-              <td className="py-4 px-4 text-sm text-slate-600">{inquiry.source}</td>
+              <td className="py-4 px-4 text-sm text-slate-600">
+                {inquiry.programs?.name || '-'}
+              </td>
+              <td className="py-4 px-4 text-sm text-slate-600">
+                {inquiry.sources?.name || '-'}
+              </td>
               <td className="py-4 px-4">
                 <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusClass(inquiry.status)}`}>
-                  {inquiry.status}
+                  {inquiry.status || 'new'}
                 </span>
               </td>
-              <td className="py-4 px-4 text-sm text-slate-600">{inquiry.counselor}</td>
-              <td className="py-4 px-4 text-sm text-slate-600">{formatDate(inquiry.lastContact)}</td>
-              <td className="py-4 px-4 text-sm text-slate-600">{formatDate(inquiry.nextFollowUp)}</td>
+              <td className="py-4 px-4 text-sm text-slate-600">
+                {inquiry.users?.full_name || '-'}
+              </td>
+              <td className="py-4 px-4 text-sm text-slate-600">
+                {formatDate(inquiry.last_contact)}
+              </td>
+              <td className="py-4 px-4 text-sm text-slate-600">
+                {formatDate(inquiry.next_follow_up)}
+              </td>
               <td className="py-4 px-4">
                 <button
                   onClick={() => onSelect(inquiry)}
@@ -75,6 +88,13 @@ const InquiryList = ({ inquiries, onSelect, filters }) => {
               </td>
             </tr>
           ))}
+          {inquiries.length === 0 && (
+            <tr>
+              <td colSpan="9" className="py-8 text-center text-slate-500">
+                No inquiries found
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

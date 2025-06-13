@@ -1,6 +1,7 @@
 import React from 'react';
 import { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
+import { toast } from 'react-hot-toast';
 
 export const Toast = () => {
   const { isDark } = useTheme();
@@ -45,8 +46,36 @@ export const Toast = () => {
 
 // Helper functions for showing toasts
 export const showToast = {
-  success: (message) => toast.success(message),
-  error: (message) => toast.error(message),
-  loading: (message) => toast.loading(message),
-  custom: (message, options) => toast(message, options),
+  success: (message) => {
+    toast.success(message, {
+      style: {
+        background: '#10B981',
+        color: '#fff',
+      },
+      iconTheme: {
+        primary: '#fff',
+        secondary: '#10B981',
+      },
+    });
+  },
+  error: (message) => {
+    toast.error(message, {
+      style: {
+        background: '#EF4444',
+        color: '#fff',
+      },
+      iconTheme: {
+        primary: '#fff',
+        secondary: '#EF4444',
+      },
+    });
+  },
+  info: (message) => {
+    toast(message, {
+      style: {
+        background: '#3B82F6',
+        color: '#fff',
+      },
+    });
+  },
 }; 

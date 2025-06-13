@@ -1,6 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getPrograms, getSources, getCounselors } from '../../lib/api/inquiries';
 
 const InquiryFilters = ({ filters, onFilterChange }) => {
+  const [programs, setPrograms] = useState([]);
+  const [sources, setSources] = useState([]);
+  const [counselors, setCounselors] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [programsRes, sourcesRes, counselorsRes] = await Promise.all([
+          getPrograms(),
+          getSources(),
+          getCounselors()
+        ]);
+
+        if (programsRes.data) setPrograms(programsRes.data);
+        if (sourcesRes.data) setSources(sourcesRes.data);
+        if (counselorsRes.data) setCounselors(counselorsRes.data);
+      } catch (error) {
+        console.error('Error fetching filter data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const handleChange = (field, value) => {
     onFilterChange({
       ...filters,
@@ -16,12 +44,14 @@ const InquiryFilters = ({ filters, onFilterChange }) => {
           value={filters.source}
           onChange={(e) => handleChange('source', e.target.value)}
           className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+          disabled={loading}
         >
           <option value="all">All Sources</option>
-          <option value="web">Web Form</option>
-          <option value="phone">Phone</option>
-          <option value="email">Email</option>
-          <option value="walk-in">Walk-in</option>
+          {sources.map(source => (
+            <option key={source.id} value={source.id}>
+              {source.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -31,11 +61,14 @@ const InquiryFilters = ({ filters, onFilterChange }) => {
           value={filters.program}
           onChange={(e) => handleChange('program', e.target.value)}
           className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+          disabled={loading}
         >
           <option value="all">All Programs</option>
-          <option value="bit">BIT</option>
-          <option value="bbm">BBM</option>
-          <option value="bsc">BSc</option>
+          {programs.map(program => (
+            <option key={program.id} value={program.id}>
+              {program.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -61,11 +94,14 @@ const InquiryFilters = ({ filters, onFilterChange }) => {
           value={filters.counselor}
           onChange={(e) => handleChange('counselor', e.target.value)}
           className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+          disabled={loading}
         >
           <option value="all">All Counselors</option>
-          <option value="sarah">Sarah Wilson</option>
-          <option value="john">John Smith</option>
-          <option value="mary">Mary Johnson</option>
+          {counselors.map(counselor => (
+            <option key={counselor.id} value={counselor.id}>
+              {counselor.full_name}
+            </option>
+          ))}
         </select>
       </div>
 

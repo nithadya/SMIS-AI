@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import InquiryFilters from './InquiryFilters';
 import InquiryList from './InquiryList';
 import InquiryForm from './InquiryForm';
 import InquiryStats from './InquiryStats';
 import ActionPlan from './ActionPlan';
+import { getInquiries, updateInquiry } from '../../lib/api/inquiries';
+import { showToast } from '../common/Toast';
 
 const InquiryManagement = () => {
   const [activeTab, setActiveTab] = useState('list');
   const [selectedInquiry, setSelectedInquiry] = useState(null);
+  const [inquiries, setInquiries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [filters, setFilters] = useState({
     source: 'all',
     program: 'all',
@@ -16,24 +21,26 @@ const InquiryManagement = () => {
     dateRange: 'all'
   });
 
-  // Mock data for demonstration
-  const mockInquiries = [
-    {
-      id: 'INQ001',
-      name: 'John Doe',
-      email: 'john.doe@email.com',
-      phone: '+94 77 123 4567',
-      source: 'Web Form',
-      program: 'Information Technology',
-      status: 'New',
-      date: '2024-03-10',
-      counselor: 'Sarah Wilson',
-      lastContact: '2024-03-10',
-      nextFollowUp: '2024-03-12',
-      notes: 'Interested in evening classes'
-    },
-    // Add more mock data as needed
-  ];
+  const fetchInquiries = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await getInquiries(filters);
+      if (error) {
+        showToast.error(error);
+        return;
+      }
+      setInquiries(data || []);
+    } catch (error) {
+      showToast.error('Failed to fetch inquiries');
+      console.error('Error fetching inquiries:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInquiries();
+  }, [filters]);
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
@@ -41,7 +48,37 @@ const InquiryManagement = () => {
 
   const handleInquirySelect = (inquiry) => {
     setSelectedInquiry(inquiry);
+    setIsEditing(false);
     setActiveTab('details');
+  };
+
+  const handleNewInquiry = (inquiry) => {
+    setInquiries(prev => [inquiry, ...prev]);
+    setActiveTab('list');
+    showToast.success('New inquiry created successfully');
+  };
+
+  const handleUpdateInquiry = async (updatedData) => {
+    try {
+      const { data, error } = await updateInquiry(selectedInquiry.id, updatedData);
+      if (error) {
+        showToast.error(error);
+        return;
+      }
+      
+      // Update the inquiries list
+      setInquiries(prev => prev.map(inq => 
+        inq.id === data.id ? data : inq
+      ));
+      
+      // Update selected inquiry
+      setSelectedInquiry(data);
+      setIsEditing(false);
+      showToast.success('Inquiry updated successfully');
+    } catch (error) {
+      showToast.error('Failed to update inquiry');
+      console.error('Error updating inquiry:', error);
+    }
   };
 
   return (
@@ -59,7 +96,7 @@ const InquiryManagement = () => {
         </button>
       </div>
 
-      <InquiryStats />
+      <InquiryStats inquiries={inquiries} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[250px,1fr] gap-6 mt-6">
         <div className="bg-white rounded-xl p-6 shadow-sm h-fit">
@@ -104,60 +141,92 @@ const InquiryManagement = () => {
             </button>
           </div>
 
-          <div>
-            {activeTab === 'list' && (
-              <InquiryList
-                inquiries={mockInquiries}
-                onSelect={handleInquirySelect}
-                filters={filters}
-              />
-            )}
-            {activeTab === 'details' && selectedInquiry && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-slate-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-4">Inquiry Information</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs text-slate-500 block mb-1">Name</label>
-                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.name}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs text-slate-500 block mb-1">Email</label>
-                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.email}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs text-slate-500 block mb-1">Phone</label>
-                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.phone}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs text-slate-500 block mb-1">Program</label>
-                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.program}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs text-slate-500 block mb-1">Source</label>
-                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.source}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs text-slate-500 block mb-1">Counselor</label>
-                        <p className="text-sm font-medium text-slate-800">{selectedInquiry.counselor}</p>
-                      </div>
-                    </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <div>
+              {activeTab === 'list' && (
+                <InquiryList
+                  inquiries={inquiries}
+                  onSelect={handleInquirySelect}
+                  filters={filters}
+                />
+              )}
+              {activeTab === 'details' && selectedInquiry && (
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-slate-800">Inquiry Details</h3>
+                    <button
+                      onClick={() => setIsEditing(!isEditing)}
+                      className="px-4 py-2 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      {isEditing ? 'Cancel Edit' : 'Edit Details'}
+                    </button>
                   </div>
+                  
+                  {isEditing ? (
+                    <InquiryForm 
+                      initialData={selectedInquiry}
+                      onSubmit={handleUpdateInquiry}
+                      isEditing={true}
+                    />
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="bg-slate-50 rounded-xl p-6">
+                        <h3 className="text-lg font-semibold text-slate-800 mb-4">Inquiry Information</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">Name</label>
+                            <p className="text-sm font-medium text-slate-800">{selectedInquiry.name}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">Email</label>
+                            <p className="text-sm font-medium text-slate-800">{selectedInquiry.email}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">Phone</label>
+                            <p className="text-sm font-medium text-slate-800">{selectedInquiry.phone}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">Program</label>
+                            <p className="text-sm font-medium text-slate-800">{selectedInquiry.programs?.name || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">Source</label>
+                            <p className="text-sm font-medium text-slate-800">{selectedInquiry.sources?.name || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">Counselor</label>
+                            <p className="text-sm font-medium text-slate-800">{selectedInquiry.users?.full_name || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">Status</label>
+                            <p className="text-sm font-medium text-slate-800">{selectedInquiry.status || '-'}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-slate-500 block mb-1">Created By</label>
+                            <p className="text-sm font-medium text-slate-800">{selectedInquiry.created_by || '-'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4">
+                          <label className="text-xs text-slate-500 block mb-1">Notes</label>
+                          <p className="text-sm text-slate-800 whitespace-pre-wrap">{selectedInquiry.notes || '-'}</p>
+                        </div>
+                      </div>
 
-                  <ActionPlan inquiry={selectedInquiry} />
+                      <ActionPlan inquiry={selectedInquiry} onUpdate={handleUpdateInquiry} />
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-            {activeTab === 'new' && (
-              <InquiryForm 
-                onSubmit={(data) => {
-                  console.log('New inquiry:', data);
-                  setActiveTab('list');
-                }}
-              />
-            )}
-          </div>
+              )}
+              {activeTab === 'new' && (
+                <InquiryForm onSubmit={handleNewInquiry} />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

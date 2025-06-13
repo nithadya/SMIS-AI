@@ -137,9 +137,9 @@ const AdvancedInquiryManagement = () => {
         <Table 
           columns={columns}
           dataSource={[
-            { name: 'John Doe', responseTime: 25, conversionRate: 75 },
-            { name: 'Jane Smith', responseTime: 18, conversionRate: 82 },
-            { name: 'Mike Johnson', responseTime: 35, conversionRate: 68 },
+            { key: '1', name: 'John Doe', responseTime: 25, conversionRate: 75 },
+            { key: '2', name: 'Jane Smith', responseTime: 18, conversionRate: 82 },
+            { key: '3', name: 'Mike Johnson', responseTime: 35, conversionRate: 68 },
           ]}
           loading={loading}
         />

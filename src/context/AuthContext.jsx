@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
@@ -6,7 +6,30 @@ const AuthContext = createContext({});
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Try to get user from localStorage on initial load
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  // Update localStorage whenever user changes
+  useEffect(() => {
+    const setupSession = async () => {
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+        // Set the user's email as the current user for RLS policies
+        await supabase.auth.setSession({
+          access_token: user.email,
+          refresh_token: user.email
+        });
+      } else {
+        localStorage.removeItem('user');
+        await supabase.auth.signOut();
+      }
+    };
+
+    setupSession();
+  }, [user]);
 
   const login = async (email, password) => {
     try {
@@ -23,10 +46,15 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: 'Invalid email or password' };
       }
 
-      // Set user data in state
+      // Set the user's email as the current user for RLS policies
+      await supabase.auth.setSession({
+        access_token: userData.email,
+        refresh_token: userData.email
+      });
+
+      // Set user data in state (which will trigger the useEffect to save to localStorage)
       setUser(userData);
 
-      // Return success and redirect to root path
       return { 
         success: true,
         redirectTo: '/'  // This will show the correct dashboard based on role
@@ -37,7 +65,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
