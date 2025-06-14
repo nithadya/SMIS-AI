@@ -36,7 +36,7 @@ const Sidebar = ({ isCollapsed }) => {
     {
       title: 'Finance',
       items: [
-        { title: 'Payments', icon: '💰', path: '/payments' },
+        { title: 'Payment Management', icon: '💰', path: '/payment-management' },
         { title: 'Currency', icon: '💱', path: '/currency-support' },
         { title: 'Discounts', icon: '🏷️', path: '/student-discount' },
       ]
@@ -75,6 +75,13 @@ const Sidebar = ({ isCollapsed }) => {
       items: [
         { title: 'Program Management', icon: '📋', path: '/programs2' },
         { title: 'Batch Management', icon: '🎓', path: '/batches' },
+      ]
+    },
+    {
+      title: 'Finance',
+      items: [
+        { title: 'Payment Management', icon: '💰', path: '/payment-management' },
+        { title: 'Financial Reports', icon: '📊', path: '/financial-reports' },
       ]
     },
   ];

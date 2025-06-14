@@ -20,7 +20,7 @@ import BatchView from './components/marketing/BatchView';
 import Enrollments from './components/enrollments/Enrollments';
 import Registrations from './components/registrations/Registrations';
 import Schedules from './components/schedules/Schedules';
-import Payments from './components/payments/Payments';
+import PaymentManagement from './components/payments/PaymentManagement';
 import CurrencySupport from './components/currency/CurrencySupport';
 import StudentDiscount from './components/discount/StudentDiscount';
 import { ThemeProvider } from './context/ThemeContext';
@@ -108,8 +108,8 @@ const router = createBrowserRouter([
         element: <Schedules />
       },
       {
-        path: 'payments',
-        element: <Payments />
+        path: 'payment-management',
+        element: <PaymentManagement />
       },
       {
         path: 'currency-support',
