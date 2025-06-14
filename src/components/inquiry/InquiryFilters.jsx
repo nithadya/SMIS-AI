@@ -84,6 +84,7 @@ const InquiryFilters = ({ filters, onFilterChange }) => {
           <option value="contacted">Contacted</option>
           <option value="follow-up">Follow-up</option>
           <option value="converted">Converted</option>
+          <option value="completed">Completed</option>
           <option value="lost">Lost</option>
         </select>
       </div>

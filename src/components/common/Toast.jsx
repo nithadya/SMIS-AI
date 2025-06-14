@@ -51,11 +51,9 @@ export const showToast = {
       style: {
         background: '#10B981',
         color: '#fff',
+        fontWeight: 500,
       },
-      iconTheme: {
-        primary: '#fff',
-        secondary: '#10B981',
-      },
+      duration: 3000,
     });
   },
   error: (message) => {
@@ -63,11 +61,9 @@ export const showToast = {
       style: {
         background: '#EF4444',
         color: '#fff',
+        fontWeight: 500,
       },
-      iconTheme: {
-        primary: '#fff',
-        secondary: '#EF4444',
-      },
+      duration: 4000,
     });
   },
   info: (message) => {
@@ -75,7 +71,20 @@ export const showToast = {
       style: {
         background: '#3B82F6',
         color: '#fff',
+        fontWeight: 500,
       },
+      duration: 3000,
     });
   },
+  warning: (message) => {
+    toast(message, {
+      icon: '⚠️',
+      style: {
+        background: '#F59E0B',
+        color: '#fff',
+        fontWeight: 500,
+      },
+      duration: 3000,
+    });
+  }
 }; 

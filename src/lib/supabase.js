@@ -6,17 +6,36 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 // Create a Supabase client with the anonymous key
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: false // Don't persist the session
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false
   }
 });
 
-// Function to get the current user's email
-const getCurrentUserEmail = () => {
+// Function to get the current user
+const getCurrentUser = () => {
   const user = localStorage.getItem('user');
-  return user ? JSON.parse(user).email : null;
+  return user ? JSON.parse(user) : null;
 };
 
-// Add an interceptor to add the user's email to each request
-supabase.realtime.setAuth(getCurrentUserEmail() || 'anonymous');
+// Setup auth header for all requests
+const setupAuthHeader = () => {
+  const user = getCurrentUser();
+  if (user && user.email) {
+    // For RLS policies - this is the critical part
+    supabase.auth.setSession({
+      access_token: user.email,
+      refresh_token: user.email
+    });
+  }
+};
+
+// Call this function initially
+setupAuthHeader();
+
+// Export a function to refresh auth when needed
+export const refreshSupabaseAuth = () => {
+  setupAuthHeader();
+};
 
 export { supabase }; 

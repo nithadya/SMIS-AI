@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, refreshSupabaseAuth } from '../lib/supabase';
 
 const AuthContext = createContext({});
 
@@ -17,11 +17,8 @@ export const AuthProvider = ({ children }) => {
     const setupSession = async () => {
       if (user) {
         localStorage.setItem('user', JSON.stringify(user));
-        // Set the user's email as the current user for RLS policies
-        await supabase.auth.setSession({
-          access_token: user.email,
-          refresh_token: user.email
-        });
+        // Refresh Supabase auth with the user's email
+        refreshSupabaseAuth();
       } else {
         localStorage.removeItem('user');
         await supabase.auth.signOut();
@@ -46,14 +43,11 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: 'Invalid email or password' };
       }
 
-      // Set the user's email as the current user for RLS policies
-      await supabase.auth.setSession({
-        access_token: userData.email,
-        refresh_token: userData.email
-      });
-
       // Set user data in state (which will trigger the useEffect to save to localStorage)
       setUser(userData);
+
+      // Refresh Supabase auth with the user's email
+      refreshSupabaseAuth();
 
       return { 
         success: true,

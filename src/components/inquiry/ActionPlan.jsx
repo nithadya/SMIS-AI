@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
+import { createEnrollmentFromInquiry } from '../../lib/api/enrollments';
+import { showToast } from '../common/Toast';
+import { useNavigate } from 'react-router-dom';
+import { refreshSupabaseAuth } from '../../lib/supabase';
 
-const ActionPlan = ({ inquiry }) => {
+const ActionPlan = ({ inquiry, onUpdate }) => {
   const [newTask, setNewTask] = useState('');
+  const [isCreatingEnrollment, setIsCreatingEnrollment] = useState(false);
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState([
     {
       id: 1,
@@ -48,6 +54,52 @@ const ActionPlan = ({ inquiry }) => {
       }
       return task;
     }));
+  };
+
+  const handleMarkComplete = () => {
+    // Update the inquiry status to completed
+    if (onUpdate) {
+      onUpdate({ status: 'completed' });
+    }
+  };
+
+  const handleCreateEnrollment = async () => {
+    if (!inquiry || !inquiry.id) {
+      showToast.error('Invalid inquiry data');
+      return;
+    }
+    
+    setIsCreatingEnrollment(true);
+    try {
+      // Make sure auth is refreshed
+      refreshSupabaseAuth();
+      
+      console.log('Creating enrollment for inquiry:', inquiry.id);
+      
+      const { data, error } = await createEnrollmentFromInquiry(inquiry.id);
+      
+      if (error) {
+        console.error('Error details:', error);
+        showToast.error(`Failed to create enrollment: ${error}`);
+        return;
+      }
+      
+      if (!data) {
+        showToast.error('No enrollment data returned');
+        return;
+      }
+      
+      console.log('Enrollment created successfully:', data);
+      showToast.success('Enrollment created successfully');
+      
+      // Navigate to enrollment page
+      navigate('/enrollments');
+    } catch (error) {
+      showToast.error(`Failed to create enrollment: ${error.message || 'Unknown error'}`);
+      console.error('Error creating enrollment:', error);
+    } finally {
+      setIsCreatingEnrollment(false);
+    }
   };
 
   return (
@@ -116,14 +168,36 @@ const ActionPlan = ({ inquiry }) => {
 
       <div className="bg-white rounded-lg p-4 border border-slate-200">
         <h4 className="text-sm font-medium text-slate-700 mb-3">Next Follow-up</h4>
-        <p className="text-sm text-slate-600 mb-4">Scheduled for: {inquiry.nextFollowUp}</p>
-        <div className="flex gap-2">
+        <p className="text-sm text-slate-600 mb-4">Scheduled for: {inquiry?.nextFollowUp || 'Not scheduled'}</p>
+        <div className="flex gap-2 flex-wrap">
           <button className="px-4 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
             Reschedule
           </button>
-          <button className="px-4 py-2 text-sm text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors">
-            Mark Complete
-          </button>
+          {inquiry?.status !== 'completed' ? (
+            <button 
+              onClick={handleMarkComplete}
+              className="px-4 py-2 text-sm text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
+            >
+              Mark Complete
+            </button>
+          ) : (
+            <button 
+              onClick={handleCreateEnrollment}
+              disabled={isCreatingEnrollment}
+              className={`px-4 py-2 text-sm text-white bg-green-500 hover:bg-green-600 rounded-lg transition-colors flex items-center gap-2 ${
+                isCreatingEnrollment ? 'opacity-70 cursor-not-allowed' : ''
+              }`}
+            >
+              {isCreatingEnrollment ? (
+                <>
+                  <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                  Creating Enrollment...
+                </>
+              ) : (
+                'Create Enrollment'
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

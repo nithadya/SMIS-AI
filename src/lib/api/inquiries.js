@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase, refreshSupabaseAuth } from '../supabase';
 
 const getCurrentUser = () => {
   const user = localStorage.getItem('user');
@@ -9,6 +9,9 @@ export const createInquiry = async (inquiryData) => {
   try {
     const user = getCurrentUser();
     if (!user) throw new Error('Not authenticated');
+    
+    // Refresh auth before making API calls
+    refreshSupabaseAuth();
 
     // Remove empty string values for foreign key fields
     const cleanedData = {
@@ -58,6 +61,9 @@ export const getInquiries = async (filters = {}) => {
   try {
     const user = getCurrentUser();
     if (!user) throw new Error('Not authenticated');
+    
+    // Refresh auth before making API calls
+    refreshSupabaseAuth();
 
     let query = supabase
       .from('inquiries')
@@ -146,6 +152,9 @@ export const updateInquiry = async (id, updates) => {
   try {
     const user = getCurrentUser();
     if (!user) throw new Error('Not authenticated');
+    
+    // Refresh auth before making API calls
+    refreshSupabaseAuth();
 
     const { data, error } = await supabase
       .from('inquiries')
@@ -167,6 +176,9 @@ export const updateInquiry = async (id, updates) => {
 
 export const getPrograms = async () => {
   try {
+    // Refresh auth before making API calls
+    refreshSupabaseAuth();
+    
     const { data, error } = await supabase
       .from('programs')
       .select('*')
@@ -182,6 +194,9 @@ export const getPrograms = async () => {
 
 export const getSources = async () => {
   try {
+    // Refresh auth before making API calls
+    refreshSupabaseAuth();
+    
     const { data, error } = await supabase
       .from('sources')
       .select('*')
@@ -197,6 +212,9 @@ export const getSources = async () => {
 
 export const getCounselors = async () => {
   try {
+    // Refresh auth before making API calls
+    refreshSupabaseAuth();
+    
     const { data, error } = await supabase
       .from('users')
       .select('id, full_name, email')

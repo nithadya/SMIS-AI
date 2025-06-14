@@ -1,147 +1,466 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { 
+  getEnrollments, 
+  getEnrollmentById, 
+  updateEnrollmentStep, 
+  addEnrollmentNote,
+  moveToNextStep,
+  moveToPreviousStep
+} from '../../lib/api/enrollments';
+import { showToast } from '../common/Toast';
+import EnrollmentFilters from './EnrollmentFilters';
+import EnrollmentStats from './EnrollmentStats';
+import EnrollmentStepDetails from './EnrollmentStepDetails';
+import { refreshSupabaseAuth } from '../../lib/supabase';
 
 const Enrollments = () => {
-  // Mock data for demonstration
-  const enrollmentData = [
-    {
-      id: 'ENR001',
-      studentName: 'John Smith',
-      program: 'Bachelor of Information Technology',
-      batch: 'BIT2024-1',
-      status: 'Document Verification',
-      lastUpdated: '2024-03-10',
-      source: 'Website Inquiry',
-      counselor: 'Sarah Wilson',
-      steps: [
-        { name: 'Initial Inquiry', completed: true, date: '2024-03-01' },
-        { name: 'Counseling Session', completed: true, date: '2024-03-05' },
-        { name: 'Document Submission', completed: true, date: '2024-03-08' },
-        { name: 'Document Verification', completed: false },
-        { name: 'Payment Processing', completed: false },
-        { name: 'Enrollment Confirmation', completed: false }
-      ],
-      notes: [
-        {
-          id: 1,
-          date: '2024-03-01',
-          author: 'Sarah Wilson',
-          content: 'Initial inquiry received through website. Student interested in evening batch.'
-        },
-        {
-          id: 2,
-          date: '2024-03-05',
-          author: 'Sarah Wilson',
-          content: 'Counseling session completed. Student has confirmed interest in BIT program.'
-        }
-      ]
-    },
-    {
-      id: 'ENR002',
-      studentName: 'Emma Davis',
-      program: 'Bachelor of Business Management',
-      batch: 'BBM2024-1',
-      status: 'Payment Processing',
-      lastUpdated: '2024-03-09',
-      source: 'Walk-in',
-      counselor: 'Michael Brown',
-      steps: [
-        { name: 'Initial Inquiry', completed: true, date: '2024-02-25' },
-        { name: 'Counseling Session', completed: true, date: '2024-02-28' },
-        { name: 'Document Submission', completed: true, date: '2024-03-05' },
-        { name: 'Document Verification', completed: true, date: '2024-03-07' },
-        { name: 'Payment Processing', completed: false },
-        { name: 'Enrollment Confirmation', completed: false }
-      ],
-      notes: [
-        {
-          id: 1,
-          date: '2024-02-25',
-          author: 'Michael Brown',
-          content: 'Walk-in inquiry. Student showed high interest in business program.'
-        }
-      ]
-    }
-  ];
-
+  const [enrollments, setEnrollments] = useState([]);
   const [activeEnrollment, setActiveEnrollment] = useState(null);
   const [newNote, setNewNote] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    program: 'all',
+    status: 'all',
+    counselor: 'all',
+    dateRange: 'all'
+  });
+  const [updatingStep, setUpdatingStep] = useState(null);
+  const [addingNote, setAddingNote] = useState(false);
+  const [navigatingStep, setNavigatingStep] = useState(false);
+  const [selectedStep, setSelectedStep] = useState(null);
 
-  const renderProgressSteps = (steps) => (
-    <div className="relative">
-      {steps.map((step, index) => (
-        <div 
-          key={step.name} 
-          className={`flex items-start mb-4 last:mb-0 ${index < steps.length - 1 ? 'pb-4' : ''}`}
-        >
-          <div className={`
-            flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-            ${step.completed 
-              ? 'bg-green-100 text-green-600 border-2 border-green-200' 
-              : 'bg-slate-100 text-slate-600 border-2 border-slate-200'
-            }
-          `}>
-            {step.completed ? '✓' : index + 1}
-          </div>
-          <div className="ml-4 flex-1">
-            <span className={`block text-sm font-medium ${step.completed ? 'text-green-600' : 'text-slate-600'}`}>
-              {step.name}
-            </span>
-            {step.date && (
-              <span className="text-xs text-slate-500">{step.date}</span>
-            )}
-          </div>
-          {index < steps.length - 1 && (
-            <div className="absolute left-4 top-8 bottom-0 w-[2px] bg-slate-200 -translate-x-1/2" />
-          )}
+  // Fetch enrollments on component mount and when filters change
+  useEffect(() => {
+    fetchEnrollments();
+  }, [filters]);
+
+  // Set the current step as selected when active enrollment changes
+  useEffect(() => {
+    if (activeEnrollment && activeEnrollment.enrollment_steps) {
+      const currentStep = activeEnrollment.enrollment_steps.find(
+        step => step.step_number === activeEnrollment.current_step
+      );
+      if (currentStep) {
+        setSelectedStep(currentStep);
+      }
+    }
+  }, [activeEnrollment]);
+
+  const fetchEnrollments = async () => {
+    setLoading(true);
+    try {
+      // Refresh auth before API calls
+      refreshSupabaseAuth();
+      
+      const { data, error } = await getEnrollments(filters);
+      if (error) {
+        showToast.error(error);
+        return;
+      }
+      setEnrollments(data || []);
+    } catch (error) {
+      showToast.error('Failed to fetch enrollments');
+      console.error('Error fetching enrollments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchEnrollmentDetails = async (enrollmentId) => {
+    setLoading(true);
+    try {
+      // Refresh auth before API calls
+      refreshSupabaseAuth();
+      
+      const { data, error } = await getEnrollmentById(enrollmentId);
+      if (error) {
+        showToast.error(error);
+        return;
+      }
+      setActiveEnrollment(data);
+    } catch (error) {
+      showToast.error('Failed to fetch enrollment details');
+      console.error('Error fetching enrollment details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStepComplete = async (enrollmentId, stepNumber) => {
+    setUpdatingStep(stepNumber);
+    try {
+      // Refresh auth before API calls
+      refreshSupabaseAuth();
+      
+      const { data, error } = await updateEnrollmentStep(enrollmentId, stepNumber, true);
+      if (error) {
+        showToast.error(error);
+        return;
+      }
+      
+      // Update the active enrollment with new data
+      setActiveEnrollment(data);
+      
+      // Also update the enrollment in the list
+      setEnrollments(prev => 
+        prev.map(enrollment => 
+          enrollment.id === enrollmentId ? {
+            ...enrollment,
+            status: data.status,
+            current_step: data.current_step,
+            enrollment_steps: data.enrollment_steps
+          } : enrollment
+        )
+      );
+      
+      showToast.success(`Step ${stepNumber} completed successfully`);
+    } catch (error) {
+      showToast.error('Failed to update enrollment step');
+      console.error('Error updating enrollment step:', error);
+    } finally {
+      setUpdatingStep(null);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim() || !activeEnrollment) return;
+    
+    setAddingNote(true);
+    try {
+      // Refresh auth before API calls
+      refreshSupabaseAuth();
+      
+      const { data, error } = await addEnrollmentNote(activeEnrollment.id, newNote);
+      if (error) {
+        showToast.error(error);
+        return;
+      }
+      
+      // Update the active enrollment with the new note
+      setActiveEnrollment(prev => ({
+        ...prev,
+        notes: [data, ...(prev.notes || [])]
+      }));
+      
+      setNewNote('');
+      showToast.success('Note added successfully');
+    } catch (error) {
+      showToast.error('Failed to add note');
+      console.error('Error adding note:', error);
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
+  const handleNextStep = async () => {
+    if (!activeEnrollment) return;
+    
+    setNavigatingStep(true);
+    try {
+      const { data, error } = await moveToNextStep(activeEnrollment.id);
+      
+      if (error) {
+        if (error === 'Already at the final step') {
+          showToast.info('Already at the final step');
+        } else {
+          showToast.error(error);
+        }
+        return;
+      }
+      
+      // Update the active enrollment with new data
+      setActiveEnrollment(data);
+      
+      // Also update the enrollment in the list
+      setEnrollments(prev => 
+        prev.map(enrollment => 
+          enrollment.id === activeEnrollment.id ? {
+            ...enrollment,
+            status: data.status,
+            current_step: data.current_step,
+            enrollment_steps: data.enrollment_steps
+          } : enrollment
+        )
+      );
+      
+      // Update selected step
+      const newCurrentStep = data.enrollment_steps.find(
+        step => step.step_number === data.current_step
+      );
+      if (newCurrentStep) {
+        setSelectedStep(newCurrentStep);
+      }
+      
+      showToast.success('Moved to next step successfully');
+    } catch (error) {
+      showToast.error('Failed to move to next step');
+      console.error('Error moving to next step:', error);
+    } finally {
+      setNavigatingStep(false);
+    }
+  };
+
+  const handlePreviousStep = async () => {
+    if (!activeEnrollment) return;
+    
+    setNavigatingStep(true);
+    try {
+      const { data, error } = await moveToPreviousStep(activeEnrollment.id);
+      
+      if (error) {
+        if (error === 'Already at the first step') {
+          showToast.info('Already at the first step');
+        } else {
+          showToast.error(error);
+        }
+        return;
+      }
+      
+      // Update the active enrollment with new data
+      setActiveEnrollment(data);
+      
+      // Also update the enrollment in the list
+      setEnrollments(prev => 
+        prev.map(enrollment => 
+          enrollment.id === activeEnrollment.id ? {
+            ...enrollment,
+            status: data.status,
+            current_step: data.current_step,
+            enrollment_steps: data.enrollment_steps
+          } : enrollment
+        )
+      );
+      
+      // Update selected step
+      const newCurrentStep = data.enrollment_steps.find(
+        step => step.step_number === data.current_step
+      );
+      if (newCurrentStep) {
+        setSelectedStep(newCurrentStep);
+      }
+      
+      showToast.success('Moved to previous step successfully');
+    } catch (error) {
+      showToast.error('Failed to move to previous step');
+      console.error('Error moving to previous step:', error);
+    } finally {
+      setNavigatingStep(false);
+    }
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleSelectStep = (step) => {
+    setSelectedStep(step);
+  };
+
+  const renderProgressSteps = (enrollment) => {
+    if (!enrollment || !enrollment.enrollment_steps) return null;
+    
+    // Sort steps by step_number
+    const sortedSteps = [...enrollment.enrollment_steps].sort((a, b) => a.step_number - b.step_number);
+    
+    return (
+      <div className="space-y-6">
+        <div className="relative">
+          {sortedSteps.map((step, index) => {
+            const isCurrentStep = enrollment.current_step === step.step_number;
+            const isSelected = selectedStep && selectedStep.id === step.id;
+            
+            return (
+              <div 
+                key={step.id} 
+                className={`flex items-start mb-4 last:mb-0 ${index < sortedSteps.length - 1 ? 'pb-4' : ''} ${
+                  isSelected ? 'bg-slate-50 rounded-lg p-2 -m-2' : ''
+                }`}
+                onClick={() => handleSelectStep(step)}
+                role="button"
+                tabIndex={0}
+              >
+                <div className={`
+                  flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                  ${step.completed 
+                    ? 'bg-green-100 text-green-600 border-2 border-green-200' 
+                    : isCurrentStep
+                      ? 'bg-blue-100 text-blue-600 border-2 border-blue-200'
+                      : 'bg-slate-100 text-slate-600 border-2 border-slate-200'
+                  }
+                `}>
+                  {step.completed ? '✓' : step.step_number}
+                </div>
+                <div className="ml-4 flex-1 flex justify-between items-center">
+                  <div>
+                    <span className={`block text-sm font-medium ${
+                      step.completed 
+                        ? 'text-green-600' 
+                        : isCurrentStep
+                          ? 'text-blue-600'
+                          : 'text-slate-600'
+                    }`}>
+                      {step.step_name}
+                    </span>
+                    {step.completion_date && (
+                      <span className="text-xs text-slate-500">
+                        {new Date(step.completion_date).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {isCurrentStep && !step.completed && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStepComplete(enrollment.id, step.step_number);
+                      }}
+                      disabled={updatingStep === step.step_number}
+                      className={`px-3 py-1 text-xs rounded-lg ${
+                        updatingStep === step.step_number
+                          ? 'bg-blue-100 text-blue-400 cursor-not-allowed'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      } transition-colors`}
+                    >
+                      {updatingStep === step.step_number ? 'Updating...' : 'Complete'}
+                    </button>
+                  )}
+                </div>
+                {index < sortedSteps.length - 1 && (
+                  <div className="absolute left-4 top-8 bottom-0 w-[2px] bg-slate-200 -translate-x-1/2" />
+                )}
+              </div>
+            );
+          })}
         </div>
-      ))}
-    </div>
-  );
 
-  const renderEnrollmentList = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {enrollmentData.map(enrollment => (
-        <div 
-          key={enrollment.id}
-          className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-          onClick={() => setActiveEnrollment(enrollment)}
-        >
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-lg font-medium text-slate-800">{enrollment.studentName}</h3>
-              <span className="text-sm text-slate-500">{enrollment.id}</span>
-            </div>
-            <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-              {enrollment.status}
-            </span>
+        {/* Selected Step Details */}
+        {selectedStep && (
+          <div className="mt-6">
+            <EnrollmentStepDetails 
+              step={selectedStep} 
+              isActive={activeEnrollment.current_step === selectedStep.step_number}
+            />
           </div>
+        )}
+
+        {/* Step Navigation Buttons */}
+        <div className="mt-6 flex justify-between">
+          <button
+            onClick={handlePreviousStep}
+            disabled={navigatingStep || (activeEnrollment && activeEnrollment.current_step <= 1)}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+              navigatingStep || (activeEnrollment && activeEnrollment.current_step <= 1)
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+            } transition-colors`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Previous Step
+          </button>
           
-          <div className="space-y-3 mb-6">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Program:</span>
-              <span className="text-slate-700">{enrollment.program}</span>
+          <button
+            onClick={handleNextStep}
+            disabled={navigatingStep || (activeEnrollment && activeEnrollment.current_step >= 6)}
+            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+              navigatingStep || (activeEnrollment && activeEnrollment.current_step >= 6)
+                ? 'bg-blue-100 text-blue-400 cursor-not-allowed'
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            } transition-colors`}
+          >
+            Next Step
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEnrollmentList = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      );
+    }
+
+    if (enrollments.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-slate-500">No enrollments found</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {enrollments.map(enrollment => (
+          <div 
+            key={enrollment.id}
+            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => fetchEnrollmentDetails(enrollment.id)}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-medium text-slate-800">{enrollment.student_name}</h3>
+                <span className="text-sm text-slate-500">{enrollment.id}</span>
+              </div>
+              <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
+                {enrollment.status}
+              </span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Batch:</span>
-              <span className="text-slate-700">{enrollment.batch}</span>
+            
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Program:</span>
+                <span className="text-slate-700">{enrollment.programs?.name || '-'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Batch:</span>
+                <span className="text-slate-700">{enrollment.batch || '-'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Counselor:</span>
+                <span className="text-slate-700">{enrollment.users?.full_name || '-'}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Last Updated:</span>
+                <span className="text-slate-700">
+                  {new Date(enrollment.updated_at).toLocaleDateString()}
+                </span>
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Counselor:</span>
-              <span className="text-slate-700">{enrollment.counselor}</span>
+
+            {/* Simple progress bar for list view */}
+            <div className="w-full bg-slate-200 rounded-full h-2.5">
+              <div 
+                className="bg-blue-600 h-2.5 rounded-full" 
+                style={{ width: `${(enrollment.current_step / 6) * 100}%` }}
+              ></div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Last Updated:</span>
-              <span className="text-slate-700">{enrollment.lastUpdated}</span>
+            <div className="flex justify-between mt-2 text-xs text-slate-500">
+              <span>Step {enrollment.current_step} of 6</span>
+              <span>{Math.round((enrollment.current_step / 6) * 100)}% Complete</span>
             </div>
           </div>
-
-          {renderProgressSteps(enrollment.steps)}
-        </div>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  };
 
   const renderEnrollmentDetails = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      );
+    }
+
     if (!activeEnrollment) return null;
 
     return (
@@ -149,9 +468,9 @@ const Enrollments = () => {
         <div className="p-6 border-b border-slate-200">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-xl font-semibold text-slate-800">{activeEnrollment.studentName}</h2>
+              <h2 className="text-xl font-semibold text-slate-800">{activeEnrollment.student_name}</h2>
               <p className="text-sm text-slate-500 mt-1">
-                {activeEnrollment.program} • {activeEnrollment.batch}
+                {activeEnrollment.programs?.name || 'No Program'} • {activeEnrollment.batch || 'No Batch'}
               </p>
             </div>
             <button 
@@ -166,7 +485,7 @@ const Enrollments = () => {
         <div className="p-6 space-y-8">
           <div>
             <h3 className="text-lg font-medium text-slate-800 mb-4">Enrollment Progress</h3>
-            {renderProgressSteps(activeEnrollment.steps)}
+            {renderProgressSteps(activeEnrollment)}
           </div>
 
           <div>
@@ -177,16 +496,18 @@ const Enrollments = () => {
                 <span className="text-base font-medium text-slate-800">{activeEnrollment.id}</span>
               </div>
               <div className="bg-slate-50 rounded-lg p-4">
-                <span className="block text-sm text-slate-500 mb-1">Source</span>
-                <span className="text-base font-medium text-slate-800">{activeEnrollment.source}</span>
+                <span className="block text-sm text-slate-500 mb-1">Status</span>
+                <span className="text-base font-medium text-slate-800">{activeEnrollment.status}</span>
               </div>
               <div className="bg-slate-50 rounded-lg p-4">
                 <span className="block text-sm text-slate-500 mb-1">Counselor</span>
-                <span className="text-base font-medium text-slate-800">{activeEnrollment.counselor}</span>
+                <span className="text-base font-medium text-slate-800">{activeEnrollment.users?.full_name || '-'}</span>
               </div>
               <div className="bg-slate-50 rounded-lg p-4">
-                <span className="block text-sm text-slate-500 mb-1">Last Updated</span>
-                <span className="text-base font-medium text-slate-800">{activeEnrollment.lastUpdated}</span>
+                <span className="block text-sm text-slate-500 mb-1">Created At</span>
+                <span className="text-base font-medium text-slate-800">
+                  {new Date(activeEnrollment.created_at).toLocaleDateString()}
+                </span>
               </div>
             </div>
           </div>
@@ -203,28 +524,34 @@ const Enrollments = () => {
                   className="px-4 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                 />
                 <button 
-                  className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
-                  onClick={() => {
-                    if (newNote.trim()) {
-                      // Add note logic here
-                      setNewNote('');
-                    }
-                  }}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    addingNote || !newNote.trim()
+                      ? 'bg-blue-300 text-white cursor-not-allowed'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                  onClick={handleAddNote}
+                  disabled={addingNote || !newNote.trim()}
                 >
-                  Add Note
+                  {addingNote ? 'Adding...' : 'Add Note'}
                 </button>
               </div>
             </div>
             <div className="space-y-4">
-              {activeEnrollment.notes.map(note => (
-                <div key={note.id} className="bg-slate-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-slate-700">{note.author}</span>
-                    <span className="text-xs text-slate-500">{note.date}</span>
+              {activeEnrollment.notes && activeEnrollment.notes.length > 0 ? (
+                activeEnrollment.notes.map(note => (
+                  <div key={note.id} className="bg-slate-50 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-slate-700">{note.author}</span>
+                      <span className="text-xs text-slate-500">
+                        {new Date(note.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-600">{note.content}</p>
                   </div>
-                  <p className="text-sm text-slate-600">{note.content}</p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-slate-500 text-center py-4">No notes available</p>
+              )}
             </div>
           </div>
         </div>
@@ -239,8 +566,19 @@ const Enrollments = () => {
         <p className="text-slate-500">Track and manage student enrollment progress</p>
       </div>
 
-      <div>
-        {activeEnrollment ? renderEnrollmentDetails() : renderEnrollmentList()}
+      {!activeEnrollment && <EnrollmentStats enrollments={enrollments} />}
+
+      <div className="grid grid-cols-1 lg:grid-cols-[250px,1fr] gap-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm h-fit">
+          <EnrollmentFilters 
+            filters={filters} 
+            onFilterChange={handleFilterChange} 
+          />
+        </div>
+
+        <div>
+          {activeEnrollment ? renderEnrollmentDetails() : renderEnrollmentList()}
+        </div>
       </div>
     </div>
   );

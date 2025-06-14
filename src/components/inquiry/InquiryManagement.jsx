@@ -5,7 +5,10 @@ import InquiryForm from './InquiryForm';
 import InquiryStats from './InquiryStats';
 import ActionPlan from './ActionPlan';
 import { getInquiries, updateInquiry } from '../../lib/api/inquiries';
+import { createEnrollmentFromInquiry } from '../../lib/api/enrollments';
 import { showToast } from '../common/Toast';
+import { useNavigate } from 'react-router-dom';
+import { refreshSupabaseAuth } from '../../lib/supabase';
 
 const InquiryManagement = () => {
   const [activeTab, setActiveTab] = useState('list');
@@ -13,6 +16,8 @@ const InquiryManagement = () => {
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
+  const [creatingEnrollment, setCreatingEnrollment] = useState(false);
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     source: 'all',
     program: 'all',
@@ -24,6 +29,9 @@ const InquiryManagement = () => {
   const fetchInquiries = async () => {
     setLoading(true);
     try {
+      // Refresh auth before API calls
+      refreshSupabaseAuth();
+      
       const { data, error } = await getInquiries(filters);
       if (error) {
         showToast.error(error);
@@ -60,6 +68,9 @@ const InquiryManagement = () => {
 
   const handleUpdateInquiry = async (updatedData) => {
     try {
+      // Refresh auth before API calls
+      refreshSupabaseAuth();
+      
       const { data, error } = await updateInquiry(selectedInquiry.id, updatedData);
       if (error) {
         showToast.error(error);
@@ -75,9 +86,41 @@ const InquiryManagement = () => {
       setSelectedInquiry(data);
       setIsEditing(false);
       showToast.success('Inquiry updated successfully');
+      
+      // If status is changed to completed, ask if they want to create an enrollment
+      if (updatedData.status === 'completed' && selectedInquiry.status !== 'completed') {
+        // Show a confirmation dialog before creating enrollment
+        if (window.confirm('Inquiry marked as completed. Would you like to create an enrollment for this inquiry?')) {
+          handleCreateEnrollment(data.id);
+        }
+      }
     } catch (error) {
       showToast.error('Failed to update inquiry');
       console.error('Error updating inquiry:', error);
+    }
+  };
+
+  const handleCreateEnrollment = async (inquiryId) => {
+    setCreatingEnrollment(true);
+    try {
+      // Refresh auth before API calls
+      refreshSupabaseAuth();
+      
+      const { data, error } = await createEnrollmentFromInquiry(inquiryId);
+      if (error) {
+        console.error('Error details:', error);
+        showToast.error(`Failed to create enrollment: ${error}`);
+        return;
+      }
+      
+      showToast.success('Enrollment created successfully');
+      // Navigate to the enrollments page
+      navigate('/enrollments');
+    } catch (error) {
+      showToast.error('Failed to create enrollment');
+      console.error('Error creating enrollment:', error);
+    } finally {
+      setCreatingEnrollment(false);
     }
   };
 

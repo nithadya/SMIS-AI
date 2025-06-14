@@ -1,5 +1,6 @@
 import React from 'react';
 import { RouterProvider, createBrowserRouter, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Layout from './components/layout/Layout';
 import Login from './pages/Login';
 import Dashboard from './components/dashboard/Dashboard';
@@ -124,6 +125,7 @@ const App = () => {
     <AuthProvider>
       <ThemeProvider>
         <RouterProvider router={router} future={{ v7_startTransition: true }} />
+        <Toaster position="top-right" />
       </ThemeProvider>
     </AuthProvider>
   );
