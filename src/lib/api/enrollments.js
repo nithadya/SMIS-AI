@@ -39,6 +39,18 @@ export const createEnrollmentFromInquiry = async (inquiryId) => {
     }
     if (!inquiry) throw new Error('Inquiry not found');
 
+    // Check if enrollment already exists for this inquiry
+    const { data: existingEnrollment, error: existingError } = await supabase
+      .from('enrollments')
+      .select('id')
+      .eq('inquiry_id', inquiryId)
+      .single();
+
+    if (existingEnrollment) {
+      console.log('Enrollment already exists for this inquiry:', existingEnrollment.id);
+      return { data: existingEnrollment, error: null };
+    }
+
     // Create enrollment first
     const enrollmentData = {
       inquiry_id: inquiryId,
@@ -63,30 +75,46 @@ export const createEnrollmentFromInquiry = async (inquiryId) => {
       throw enrollmentError;
     }
 
-    // Create the 6 enrollment steps
-    const steps = [
-      { step_number: 1, step_name: 'Initial Inquiry', completed: true, completion_date: new Date().toISOString() },
-      { step_number: 2, step_name: 'Counseling Session', completed: false },
-      { step_number: 3, step_name: 'Document Submission', completed: false },
-      { step_number: 4, step_name: 'Document Verification', completed: false },
-      { step_number: 5, step_name: 'Payment Processing', completed: false },
-      { step_number: 6, step_name: 'Enrollment Confirmation', completed: false }
-    ];
-
-    const stepsToInsert = steps.map(step => ({
-      ...step,
-      enrollment_id: enrollment.id
-    }));
-
-    console.log('Creating enrollment steps:', stepsToInsert);
-
-    const { error: stepsError } = await supabase
+    // Check if enrollment steps already exist
+    const { data: existingSteps, error: stepsCheckError } = await supabase
       .from('enrollment_steps')
-      .insert(stepsToInsert);
+      .select('step_number')
+      .eq('enrollment_id', enrollment.id);
 
-    if (stepsError) {
-      console.error('Steps creation error:', stepsError);
-      throw stepsError;
+    if (stepsCheckError) {
+      console.error('Steps check error:', stepsCheckError);
+      throw stepsCheckError;
+    }
+
+    // Only create steps if they don't exist
+    if (!existingSteps || existingSteps.length === 0) {
+      // Create the 6 enrollment steps
+      const steps = [
+        { step_number: 1, step_name: 'Initial Inquiry', completed: true, completion_date: new Date().toISOString() },
+        { step_number: 2, step_name: 'Counseling Session', completed: false },
+        { step_number: 3, step_name: 'Document Submission', completed: false },
+        { step_number: 4, step_name: 'Document Verification', completed: false },
+        { step_number: 5, step_name: 'Payment Processing', completed: false },
+        { step_number: 6, step_name: 'Enrollment Confirmation', completed: false }
+      ];
+
+      const stepsToInsert = steps.map(step => ({
+        ...step,
+        enrollment_id: enrollment.id
+      }));
+
+      console.log('Creating enrollment steps:', stepsToInsert);
+
+      const { error: stepsError } = await supabase
+        .from('enrollment_steps')
+        .insert(stepsToInsert);
+
+      if (stepsError) {
+        console.error('Steps creation error:', stepsError);
+        throw stepsError;
+      }
+    } else {
+      console.log('Enrollment steps already exist, skipping creation');
     }
 
     // Add an initial note

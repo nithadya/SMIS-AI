@@ -16,7 +16,18 @@ export const getRegistrations = async (filters = {}) => {
     let query = supabase
       .from('enrollments')
       .select(`
-        *,
+        id,
+        inquiry_id,
+        student_name,
+        program_id,
+        counselor_id,
+        status,
+        current_step,
+        is_registered,
+        created_at,
+        updated_at,
+        created_by,
+        updated_by,
         programs:program_id (
           id,
           name,
@@ -29,7 +40,34 @@ export const getRegistrations = async (filters = {}) => {
           email
         ),
         registration_data (
-          *,
+          id,
+          enrollment_id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          date_of_birth,
+          gender,
+          address,
+          city,
+          country,
+          selected_program_id,
+          selected_batch,
+          batch_id,
+          previous_education,
+          institution,
+          year_completed,
+          grade_results,
+          payment_method,
+          payment_status,
+          payment_amount,
+          payment_reference,
+          notes,
+          special_requirements,
+          created_at,
+          updated_at,
+          created_by,
+          updated_by,
           selected_program:selected_program_id (
             id,
             name,
@@ -38,6 +76,7 @@ export const getRegistrations = async (filters = {}) => {
         ),
         registration_documents (
           id,
+          enrollment_id,
           document_type,
           document_name,
           file_path,
@@ -48,10 +87,13 @@ export const getRegistrations = async (filters = {}) => {
         ),
         enrollment_steps (
           id,
+          enrollment_id,
           step_number,
           step_name,
           completed,
-          completion_date
+          completion_date,
+          created_at,
+          updated_at
         )
       `);
 
@@ -122,7 +164,18 @@ export const getRegistrationByEnrollmentId = async (enrollmentId) => {
     const { data, error } = await supabase
       .from('enrollments')
       .select(`
-        *,
+        id,
+        inquiry_id,
+        student_name,
+        program_id,
+        counselor_id,
+        status,
+        current_step,
+        is_registered,
+        created_at,
+        updated_at,
+        created_by,
+        updated_by,
         programs:program_id (
           id,
           name,
@@ -135,7 +188,34 @@ export const getRegistrationByEnrollmentId = async (enrollmentId) => {
           email
         ),
         registration_data (
-          *,
+          id,
+          enrollment_id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          date_of_birth,
+          gender,
+          address,
+          city,
+          country,
+          selected_program_id,
+          selected_batch,
+          batch_id,
+          previous_education,
+          institution,
+          year_completed,
+          grade_results,
+          payment_method,
+          payment_status,
+          payment_amount,
+          payment_reference,
+          notes,
+          special_requirements,
+          created_at,
+          updated_at,
+          created_by,
+          updated_by,
           selected_program:selected_program_id (
             id,
             name,
@@ -144,6 +224,7 @@ export const getRegistrationByEnrollmentId = async (enrollmentId) => {
         ),
         registration_documents (
           id,
+          enrollment_id,
           document_type,
           document_name,
           file_path,
@@ -154,10 +235,13 @@ export const getRegistrationByEnrollmentId = async (enrollmentId) => {
         ),
         enrollment_steps (
           id,
+          enrollment_id,
           step_number,
           step_name,
           completed,
-          completion_date
+          completion_date,
+          created_at,
+          updated_at
         )
       `)
       .eq('id', enrollmentId)
@@ -352,7 +436,18 @@ export const completeRegistration = async (enrollmentId) => {
       })
       .eq('id', enrollmentId)
       .select(`
-        *,
+        id,
+        inquiry_id,
+        student_name,
+        program_id,
+        counselor_id,
+        status,
+        current_step,
+        is_registered,
+        created_at,
+        updated_at,
+        created_by,
+        updated_by,
         programs:program_id (
           id,
           name,
@@ -363,9 +458,57 @@ export const completeRegistration = async (enrollmentId) => {
           full_name,
           email
         ),
-        registration_data (*),
-        registration_documents (*),
-        enrollment_steps (*)
+        registration_data (
+          id,
+          enrollment_id,
+          first_name,
+          last_name,
+          email,
+          phone,
+          date_of_birth,
+          gender,
+          address,
+          city,
+          country,
+          selected_program_id,
+          selected_batch,
+          batch_id,
+          previous_education,
+          institution,
+          year_completed,
+          grade_results,
+          payment_method,
+          payment_status,
+          payment_amount,
+          payment_reference,
+          notes,
+          special_requirements,
+          created_at,
+          updated_at,
+          created_by,
+          updated_by
+        ),
+        registration_documents (
+          id,
+          enrollment_id,
+          document_type,
+          document_name,
+          file_path,
+          file_size,
+          mime_type,
+          uploaded_by,
+          uploaded_at
+        ),
+        enrollment_steps (
+          id,
+          enrollment_id,
+          step_number,
+          step_name,
+          completed,
+          completion_date,
+          created_at,
+          updated_at
+        )
       `)
       .single();
 

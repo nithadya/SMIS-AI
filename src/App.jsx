@@ -8,6 +8,7 @@ import Dashboard2 from './components/dashboard/Dashboard2';
 import Analytics from './components/analytics/Analytics';
 import StudentManagement from './components/students/StudentManagement';
 import StudentManagement2 from './components/students/StudentManagement2';
+import MarketingStudentManagement from './components/marketing/StudentManagement';
 import CounselorPerformance from './components/counselor/CounselorPerformance';
 import InquiryManagement from './components/inquiry/InquiryManagement';
 import AdvancedInquiryManagement from './components/inquiry/AdvancedInquiryManagement';
@@ -54,7 +55,9 @@ const router = createBrowserRouter([
       },
       {
         path: 'student-management',
-        element: <StudentManagement />
+        element: <ProtectedRoute>
+          {({ user }) => user?.role === 'manager' ? <StudentManagement /> : <MarketingStudentManagement />}
+        </ProtectedRoute>
       },
       {
         path: 'student-management2',
