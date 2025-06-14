@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { ALL_PROGRAMS } from '../../constants/programs';
 
 const StudentDiscount = () => {
-  // Mock data for demonstration
+  // Mock data for demonstration - updated with real ICBT programs
   const discountData = {
     discountPrograms: [
       {
@@ -45,7 +46,7 @@ const StudentDiscount = () => {
       {
         id: 'APP001',
         studentName: 'Alice Cooper',
-        program: 'Bachelor of Information Technology',
+        program: 'BSc (Hons) Software Engineering (3 year Degree)',
         discountType: 'Academic Excellence',
         status: 'Under Review',
         submittedDate: '2024-03-08',
@@ -54,11 +55,29 @@ const StudentDiscount = () => {
       {
         id: 'APP002',
         studentName: 'Bob Wilson',
-        program: 'Bachelor of Business Management',
+        program: 'Higher Diploma in Business Management',
         discountType: 'Early Bird Registration',
         status: 'Approved',
         submittedDate: '2024-03-05',
         documents: ['Registration Receipt']
+      },
+      {
+        id: 'APP003',
+        studentName: 'Sarah Chen',
+        program: 'BSc (Hons) Information Technology in Artificial Intelligence (4 Years)',
+        discountType: 'Academic Excellence',
+        status: 'Approved',
+        submittedDate: '2024-03-10',
+        documents: ['Transcript', 'Recommendation Letter']
+      },
+      {
+        id: 'APP004',
+        studentName: 'David Kumar',
+        program: 'BSc (Hons) Digital Marketing',
+        discountType: 'Family Discount',
+        status: 'Under Review',
+        submittedDate: '2024-03-12',
+        documents: ['Birth Certificate', 'Sibling Enrollment Proof']
       }
     ]
   };

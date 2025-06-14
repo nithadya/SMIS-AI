@@ -1,129 +1,153 @@
 import React, { useState } from 'react';
+import { ALL_PROGRAMS, PROGRAM_CATEGORIES, getProgramsByCategory } from '../../constants/programs';
 
 const Programs = () => {
   const [activeProgram, setActiveProgram] = useState(null);
   const [activeTab, setActiveTab] = useState('details');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Mock data for demonstration
-  const programs = [
-    {
-      id: 1,
-      name: 'Bachelor of Information Technology',
-      shortName: 'BIT',
-      description: 'A comprehensive program covering software development, networking, and system administration.',
-      duration: '4 years',
-      intakes: ['February', 'July'],
-      fees: {
-        local: 'LKR 850,000/year',
-        international: 'USD 6,500/year'
-      },
-      eligibility: [
-        'Minimum 3 "S" passes in GCE A/L',
-        'Credit pass in English at O/L',
-        'Basic mathematics proficiency'
-      ],
-      careers: [
-        'Software Developer',
-        'System Administrator',
-        'Network Engineer',
-        'IT Consultant'
-      ],
-      materials: [
-        {
-          type: 'brochure',
-          name: 'Program Brochure 2024',
-          size: '2.4 MB',
-          url: '/materials/bit-brochure-2024.pdf'
-        },
-        {
-          type: 'curriculum',
-          name: 'Detailed Curriculum',
-          size: '1.8 MB',
-          url: '/materials/bit-curriculum.pdf'
-        }
-      ]
+  // Enhanced program data with additional details for ICBT programs
+  const enhancedPrograms = ALL_PROGRAMS.map(program => ({
+    ...program,
+    shortName: program.code,
+    intakes: ['February', 'July', 'October'],
+    fees: {
+      local: program.level === 'Higher Diploma' ? 'LKR 450,000/year' : 'LKR 650,000/year',
+      international: program.level === 'Higher Diploma' ? 'USD 3,500/year' : 'USD 5,000/year'
     },
-    {
-      id: 2,
-      name: 'Bachelor of Business Management',
-      shortName: 'BBM',
-      description: 'Develop essential business management skills with focus on modern business practices.',
-      duration: '3 years',
-      intakes: ['March', 'September'],
-      fees: {
-        local: 'LKR 750,000/year',
-        international: 'USD 5,500/year'
+    eligibility: program.level === 'Higher Diploma' ? [
+      'Minimum 3 "S" passes in GCE A/L',
+      'Credit pass in English at O/L',
+      'Basic mathematics proficiency'
+    ] : [
+      'Minimum 3 "S" passes in GCE A/L with good grades',
+      'Credit pass in English at O/L',
+      'Mathematics proficiency',
+      'Relevant subject background preferred'
+    ],
+    careers: getCareersByCategory(program.category, program.name),
+    materials: [
+      {
+        type: 'brochure',
+        name: 'Program Brochure 2024',
+        size: '2.4 MB',
+        url: `/materials/${program.code.toLowerCase()}-brochure-2024.pdf`
       },
-      eligibility: [
-        'Minimum 3 "S" passes in GCE A/L',
-        'Credit pass in English at O/L',
-        'Basic mathematics knowledge'
-      ],
-      careers: [
-        'Business Analyst',
-        'Management Consultant',
-        'Project Manager',
-        'Entrepreneur'
-      ],
-      materials: [
-        {
-          type: 'brochure',
-          name: 'Program Brochure 2024',
-          size: '2.1 MB',
-          url: '/materials/bbm-brochure-2024.pdf'
-        },
-        {
-          type: 'presentation',
-          name: 'Program Overview',
-          size: '3.5 MB',
-          url: '/materials/bbm-overview.pptx'
-        }
-      ]
+      {
+        type: 'curriculum',
+        name: 'Detailed Curriculum',
+        size: '1.8 MB',
+        url: `/materials/${program.code.toLowerCase()}-curriculum.pdf`
+      }
+    ]
+  }));
+
+  // Helper function to get careers by category
+  function getCareersByCategory(category, programName) {
+    if (category === 'Information Technology') {
+      if (programName.includes('Software Engineering')) {
+        return ['Software Developer', 'Full Stack Developer', 'DevOps Engineer', 'Technical Lead'];
+      } else if (programName.includes('Artificial Intelligence')) {
+        return ['AI Engineer', 'Machine Learning Specialist', 'Data Scientist', 'AI Research Analyst'];
+      } else if (programName.includes('Business Information Systems')) {
+        return ['Business Analyst', 'Systems Analyst', 'IT Consultant', 'Project Manager'];
+      } else {
+        return ['Software Developer', 'System Administrator', 'Network Engineer', 'IT Consultant'];
+      }
+    } else if (category === 'Business') {
+      if (programName.includes('Digital Marketing')) {
+        return ['Digital Marketing Specialist', 'Social Media Manager', 'SEO Specialist', 'Content Marketing Manager'];
+      } else {
+        return ['Business Analyst', 'Management Consultant', 'Project Manager', 'Entrepreneur'];
+      }
+    } else if (category === 'Science') {
+      if (programName.includes('Psychology')) {
+        return ['Clinical Psychologist', 'Counselor', 'Research Psychologist', 'HR Specialist'];
+      } else if (programName.includes('Biomedical')) {
+        return ['Biomedical Technician', 'Laboratory Analyst', 'Research Assistant', 'Medical Device Specialist'];
+      }
     }
-  ];
+    return ['Graduate Trainee', 'Specialist', 'Consultant', 'Manager'];
+  }
+
+  const filteredPrograms = selectedCategory === 'all' 
+    ? enhancedPrograms 
+    : enhancedPrograms.filter(program => program.category === selectedCategory);
 
   const renderProgramList = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {programs.map(program => (
-        <div 
-          key={program.id}
-          className={`group bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer
-            ${activeProgram?.id === program.id ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
-          onClick={() => setActiveProgram(program)}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => e.key === 'Enter' && setActiveProgram(program)}
-          aria-label={`View details for ${program.name}`}
-        >
-          <div className="flex justify-between items-start mb-6">
-            <h3 className="text-lg font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-              {program.name}
-            </h3>
-            <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-              {program.duration}
-            </span>
-          </div>
-          <p className="text-slate-600 mb-8 leading-relaxed">{program.description}</p>
-          <div className="grid grid-cols-2 gap-6 mb-8">
-            <div className="bg-slate-50 rounded-lg p-4 group-hover:bg-blue-50/50 transition-colors">
-              <span className="block text-sm text-slate-500 mb-1.5">Next Intake</span>
-              <span className="text-base font-medium text-slate-800">{program.intakes[0]}</span>
-            </div>
-            <div className="bg-slate-50 rounded-lg p-4 group-hover:bg-blue-50/50 transition-colors">
-              <span className="block text-sm text-slate-500 mb-1.5">Local Fee</span>
-              <span className="text-base font-medium text-slate-800">{program.fees.local}</span>
-            </div>
-          </div>
-          <button 
-            className="w-full px-6 py-3 bg-blue-500 text-white text-sm font-medium rounded-lg 
-              hover:bg-blue-600 focus:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 
-              transition-all duration-200 ease-in-out transform hover:-translate-y-0.5"
-            aria-label={`View detailed information about ${program.name}`}
+    <div>
+      {/* Category Filter */}
+      <div className="mb-8">
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => setSelectedCategory('all')}
+            className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+              selectedCategory === 'all'
+                ? 'bg-blue-500 text-white shadow-lg'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-blue-50'
+            }`}
           >
-            View Details
+            All Programs ({enhancedPrograms.length})
           </button>
+          {PROGRAM_CATEGORIES.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                selectedCategory === category.id
+                  ? 'bg-blue-500 text-white shadow-lg'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-blue-50'
+              }`}
+            >
+              {category.name} ({category.count})
+            </button>
+          ))}
         </div>
-      ))}
+      </div>
+
+      {/* Programs Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {filteredPrograms.map(program => (
+          <div 
+            key={program.id}
+            className={`group bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer
+              ${activeProgram?.id === program.id ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+            onClick={() => setActiveProgram(program)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && setActiveProgram(program)}
+            aria-label={`View details for ${program.name}`}
+          >
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-lg font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
+                {program.name}
+              </h3>
+              <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
+                {program.duration}
+              </span>
+            </div>
+            <p className="text-slate-600 mb-8 leading-relaxed">{program.description}</p>
+            <div className="grid grid-cols-2 gap-6 mb-8">
+              <div className="bg-slate-50 rounded-lg p-4 group-hover:bg-blue-50/50 transition-colors">
+                <span className="block text-sm text-slate-500 mb-1.5">Next Intake</span>
+                <span className="text-base font-medium text-slate-800">{program.intakes[0]}</span>
+              </div>
+              <div className="bg-slate-50 rounded-lg p-4 group-hover:bg-blue-50/50 transition-colors">
+                <span className="block text-sm text-slate-500 mb-1.5">Local Fee</span>
+                <span className="text-base font-medium text-slate-800">{program.fees.local}</span>
+              </div>
+            </div>
+            <button 
+              className="w-full px-6 py-3 bg-blue-500 text-white text-sm font-medium rounded-lg 
+                hover:bg-blue-600 focus:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 
+                transition-all duration-200 ease-in-out transform hover:-translate-y-0.5"
+              aria-label={`View detailed information about ${program.name}`}
+            >
+              View Details
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 

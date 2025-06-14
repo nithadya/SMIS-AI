@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { ALL_PROGRAMS } from '../../constants/programs';
 
 const CurrencySupport = () => {
-  // Mock data for demonstration
+  // Mock data for demonstration - updated with real ICBT programs
   const currencyData = {
     baseCurrency: 'USD',
     exchangeRates: {
@@ -11,40 +12,22 @@ const CurrencySupport = () => {
       AUD: 1.52,
       CAD: 1.35,
       SGD: 1.34,
-      INR: 82.75
+      INR: 82.75,
+      LKR: 320.50
     },
-    programs: [
-      {
-        id: 1,
-        name: 'Bachelor of Information Technology',
-        fees: {
-          application: 100,
-          registration: 500,
-          tuition: 15000,
-          total: 15600
-        }
-      },
-      {
-        id: 2,
-        name: 'Bachelor of Business Management',
-        fees: {
-          application: 100,
-          registration: 500,
-          tuition: 14000,
-          total: 14600
-        }
-      },
-      {
-        id: 3,
-        name: 'Bachelor of Engineering',
-        fees: {
-          application: 100,
-          registration: 500,
-          tuition: 16000,
-          total: 16600
-        }
+    programs: ALL_PROGRAMS.slice(0, 6).map((program, index) => ({
+      id: index + 1,
+      name: program.name,
+      code: program.code,
+      fees: {
+        application: 100,
+        registration: program.level === 'Higher Diploma' ? 400 : 500,
+        tuition: program.level === 'Higher Diploma' ? 12000 : 
+                 program.duration === '4 years' ? 18000 : 15000,
+        total: program.level === 'Higher Diploma' ? 12500 : 
+               program.duration === '4 years' ? 18600 : 15600
       }
-    ]
+    }))
   };
 
   const [selectedProgram, setSelectedProgram] = useState(currencyData.programs[0]);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MagicCard, AnimatedList, ScrollProgress } from '../ui';
+import { ALL_PROGRAMS } from '../../constants/programs';
 
 const StudentManagement2 = () => {
   const [selectedView, setSelectedView] = useState('overview');
@@ -12,7 +13,7 @@ const StudentManagement2 = () => {
     performanceLevel: 'all'
   });
 
-  // Mock data for demonstration
+  // Mock data for demonstration - updated with real ICBT programs
   const studentData = {
     overview: {
       totalStudents: 5909,
@@ -29,10 +30,12 @@ const StudentManagement2 = () => {
     retentionAnalytics: {
       overallRate: 92,
       byProgram: {
-        'Computer Science': 94,
-        'Business Administration': 91,
-        'Data Science': 89,
-        'Digital Marketing': 88
+        'BSc (Hons) Software Engineering': 94,
+        'BSc (Hons) Business and Management': 91,
+        'BSc (Hons) Information Technology in Artificial Intelligence': 89,
+        'BSc (Hons) Digital Marketing': 88,
+        'Higher Diploma in Computing and Software Engineering': 90,
+        'BSc (Hons) in Psychology': 93
       },
       predictedChurnRisk: {
         high: 162,
@@ -67,22 +70,22 @@ const StudentManagement2 = () => {
       {
         id: 1,
         type: 'Performance',
-        insight: 'Students in the evening batch show 15% better performance in practical assignments',
+        insight: 'Students in BSc (Hons) Software Engineering evening batch show 15% better performance in practical assignments',
         recommendation: 'Consider adjusting morning batch teaching methods to match evening success patterns',
         confidence: 89
       },
       {
         id: 2,
         type: 'Retention',
-        insight: 'Students with peer mentor support are 25% more likely to complete their program',
+        insight: 'Students in Higher Diploma programs with peer mentor support are 25% more likely to complete their program',
         recommendation: 'Expand peer mentoring program to all first-year students',
         confidence: 92
       },
       {
         id: 3,
         type: 'Academic',
-        insight: 'Early assignment completion correlates with 30% higher final grades',
-        recommendation: 'Implement early warning system for assignment tracking',
+        insight: 'BSc (Hons) Information Technology in AI students who complete early assignments show 30% higher final grades',
+        recommendation: 'Implement early warning system for assignment tracking in AI program',
         confidence: 87
       }
     ]
