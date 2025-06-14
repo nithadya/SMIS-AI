@@ -14,6 +14,8 @@ import AdvancedInquiryManagement from './components/inquiry/AdvancedInquiryManag
 import Programs from './components/programs/Programs';
 import ProgramManagement2 from './components/programs/ProgramManagement2';
 import Batches from './components/batches/Batches';
+import BatchManagement from './components/manager/BatchManagement';
+import BatchView from './components/marketing/BatchView';
 import Enrollments from './components/enrollments/Enrollments';
 import Registrations from './components/registrations/Registrations';
 import Schedules from './components/schedules/Schedules';
@@ -88,7 +90,15 @@ const router = createBrowserRouter([
       },
       {
         path: 'batches',
-        element: <Batches />
+        element: <ProtectedRoute>
+          {({ user }) => {
+            console.log('Batches route - user data:', user);
+            console.log('User role:', user?.role);
+            const component = user?.role === 'manager' ? <BatchManagement /> : <BatchView />;
+            console.log('Rendering component:', user?.role === 'manager' ? 'BatchManagement' : 'BatchView');
+            return component;
+          }}
+        </ProtectedRoute>
       },
       {
         path: 'schedules',

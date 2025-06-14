@@ -29,7 +29,7 @@ const Sidebar = ({ isCollapsed }) => {
       title: 'Academic',
       items: [
         { title: 'Programs', icon: '📚', path: '/programs' },
-        { title: 'Batches', icon: '👥', path: '/batches' },
+        { title: 'Batch Overview', icon: '👥', path: '/batches' },
         { title: 'Schedules', icon: '📅', path: '/schedules' },
       ]
     },
@@ -74,6 +74,7 @@ const Sidebar = ({ isCollapsed }) => {
       title: 'Academic',
       items: [
         { title: 'Program Management', icon: '📋', path: '/programs2' },
+        { title: 'Batch Management', icon: '🎓', path: '/batches' },
       ]
     },
   ];

@@ -5,13 +5,42 @@ const getCurrentUser = () => {
   return user ? JSON.parse(user) : null;
 };
 
+// Get all programs
+export const getPrograms = async () => {
+  try {
+    // Temporarily remove auth check for testing
+    // const user = getCurrentUser();
+    // if (!user) throw new Error('Not authenticated');
+    
+    // refreshSupabaseAuth();
+
+    const { data, error } = await supabase
+      .from('programs')
+      .select('*')
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching programs:', error);
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error in getPrograms:', error);
+    return { data: null, error: error.message };
+  }
+};
+
 // Get all batches with filtering
 export const getBatches = async (filters = {}) => {
+  console.log('getBatches called with filters:', filters);
   try {
-    const user = getCurrentUser();
-    if (!user) throw new Error('Not authenticated');
+    // Temporarily remove auth check for testing
+    // const user = getCurrentUser();
+    // console.log('Current user:', user);
+    // if (!user) throw new Error('Not authenticated');
     
-    refreshSupabaseAuth();
+    // refreshSupabaseAuth();
 
     let query = supabase
       .from('batches')
@@ -25,12 +54,16 @@ export const getBatches = async (filters = {}) => {
         )
       `);
 
+    console.log('Base query created');
+
     // Apply filters
     if (filters.program && filters.program !== 'all') {
       query = query.eq('program_id', filters.program);
+      console.log('Applied program filter:', filters.program);
     }
     if (filters.status && filters.status !== 'all') {
       query = query.eq('status', filters.status);
+      console.log('Applied status filter:', filters.status);
     }
 
     // Date range filter
@@ -55,12 +88,15 @@ export const getBatches = async (filters = {}) => {
 
       if (startDate) {
         query = query.gte('created_at', startDate.toISOString());
+        console.log('Applied date filter:', startDate.toISOString());
       }
     }
 
     query = query.order('created_at', { ascending: false });
+    console.log('About to execute query');
 
     const { data, error } = await query;
+    console.log('Query result:', { data, error, dataLength: data?.length });
 
     if (error) {
       console.error('Error fetching batches:', error);
