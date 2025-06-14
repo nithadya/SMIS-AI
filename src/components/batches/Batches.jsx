@@ -1,49 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { getBatches, getBatchById } from '../../lib/api/batches';
+import { showToast } from '../common/Toast';
 
 const Batches = () => {
-  // Mock data for demonstration
-  const batchData = [
-    {
-      id: 'BIT2024-1',
-      program: 'Bachelor of Information Technology',
-      startDate: '2024-05-01',
-      endDate: '2024-08-30',
-      schedule: 'Monday, Wednesday, Friday',
-      timeSlot: '9:00 AM - 12:00 PM',
-      capacity: 40,
-      enrolled: 35,
-      status: 'Upcoming',
-      lecturer: 'Dr. Sarah Wilson'
-    },
-    {
-      id: 'BBM2024-1',
-      program: 'Bachelor of Business Management',
-      startDate: '2024-06-15',
-      endDate: '2024-10-15',
-      schedule: 'Tuesday, Thursday',
-      timeSlot: '2:00 PM - 5:00 PM',
-      capacity: 35,
-      enrolled: 20,
-      status: 'Open',
-      lecturer: 'Prof. Michael Brown'
-    },
-    {
-      id: 'BIT2024-2',
-      program: 'Bachelor of Information Technology',
-      startDate: '2024-09-01',
-      endDate: '2024-12-20',
-      schedule: 'Monday, Wednesday, Friday',
-      timeSlot: '1:00 PM - 4:00 PM',
-      capacity: 40,
-      enrolled: 15,
-      status: 'Open',
-      lecturer: 'Dr. James Anderson'
-    }
-  ];
-
+  const [batchData, setBatchData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState('calendar');
   const [selectedBatch, setSelectedBatch] = useState(null);
+  const [filters, setFilters] = useState({
+    program: 'all',
+    status: 'all',
+    dateRange: 'all'
+  });
+
+  useEffect(() => {
+    fetchBatches();
+  }, [filters]);
+
+  const fetchBatches = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await getBatches(filters);
+      if (error) {
+        showToast.error(error);
+        return;
+      }
+      setBatchData(data || []);
+    } catch (error) {
+      showToast.error('Failed to fetch batches');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getCapacityColor = (enrolled, capacity) => {
     const percentage = (enrolled / capacity) * 100;
@@ -86,61 +75,79 @@ const Batches = () => {
     );
   };
 
-  const renderCalendarView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {batchData.map(batch => (
-        <motion.div 
-          key={batch.id}
-          whileHover={{ scale: 1.02 }}
-          className="card glass hover:glow-sm transition-all duration-200 cursor-pointer"
-          onClick={() => setSelectedBatch(batch)}
-        >
-          <div className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent mb-1">
-                  {batch.id}
-                </h3>
-                <p className="text-sm text-secondary-600 dark:text-secondary-400">{batch.program}</p>
-              </div>
-              <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(batch.status)}`}>
-                {batch.status}
-              </span>
-            </div>
+  const renderCalendarView = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      );
+    }
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+    if (batchData.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-slate-500">No batches found</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {batchData.map(batch => (
+          <motion.div 
+            key={batch.id}
+            whileHover={{ scale: 1.02 }}
+            className="card glass hover:glow-sm transition-all duration-200 cursor-pointer"
+            onClick={() => setSelectedBatch(batch)}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
                 <div>
-                  <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">Start Date</p>
-                  <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.startDate}</p>
+                  <h3 className="text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent mb-1">
+                    {batch.batch_code}
+                  </h3>
+                  <p className="text-sm text-secondary-600 dark:text-secondary-400">{batch.programs?.name || batch.name}</p>
                 </div>
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(batch.status)}`}>
+                  {batch.status}
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">Start Date</p>
+                    <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.start_date}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">End Date</p>
+                    <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.end_date}</p>
+                  </div>
+                </div>
+
                 <div>
-                  <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">End Date</p>
-                  <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.endDate}</p>
+                  <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">Schedule</p>
+                  <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.schedule}</p>
+                  <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.time_slot}</p>
                 </div>
-              </div>
 
-              <div>
-                <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">Schedule</p>
-                <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.schedule}</p>
-                <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.timeSlot}</p>
-              </div>
+                <div>
+                  <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">Lecturer</p>
+                  <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.lecturer}</p>
+                </div>
 
-              <div>
-                <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-1">Lecturer</p>
-                <p className="text-sm text-secondary-700 dark:text-secondary-300">{batch.lecturer}</p>
-              </div>
-
-              <div>
-                <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-2">Capacity</p>
-                {renderCapacityIndicator(batch)}
+                <div>
+                  <p className="text-xs text-secondary-500 dark:text-secondary-400 mb-2">Capacity</p>
+                  {renderCapacityIndicator(batch)}
+                </div>
               </div>
             </div>
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
 
   const renderListView = () => (
     <div className="card glass overflow-hidden">
@@ -167,12 +174,12 @@ const Batches = () => {
               >
                 <td className="py-4 px-4 text-sm">
                   <span className="font-medium bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
-                    {batch.id}
+                    {batch.batch_code}
                   </span>
                 </td>
-                <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.program}</td>
+                <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.programs?.name || batch.name}</td>
                 <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.schedule}</td>
-                <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.timeSlot}</td>
+                <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.time_slot}</td>
                 <td className="py-4 px-4 text-sm text-secondary-700 dark:text-secondary-300">{batch.lecturer}</td>
                 <td className="py-4 px-4 w-48">{renderCapacityIndicator(batch)}</td>
                 <td className="py-4 px-4">

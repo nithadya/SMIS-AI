@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   getEnrollments, 
   getEnrollmentById, 
@@ -14,6 +15,7 @@ import EnrollmentStepDetails from './EnrollmentStepDetails';
 import { refreshSupabaseAuth } from '../../lib/supabase';
 
 const Enrollments = () => {
+  const navigate = useNavigate();
   const [enrollments, setEnrollments] = useState([]);
   const [activeEnrollment, setActiveEnrollment] = useState(null);
   const [newNote, setNewNote] = useState('');
@@ -257,124 +259,123 @@ const Enrollments = () => {
   };
 
   const renderProgressSteps = (enrollment) => {
-    if (!enrollment || !enrollment.enrollment_steps) return null;
-    
-    // Sort steps by step_number
-    const sortedSteps = [...enrollment.enrollment_steps].sort((a, b) => a.step_number - b.step_number);
-    
+    const steps = enrollment.enrollment_steps || [];
+    const sortedSteps = steps.sort((a, b) => a.step_number - b.step_number);
+
     return (
       <div className="space-y-6">
-        <div className="relative">
-          {sortedSteps.map((step, index) => {
-            const isCurrentStep = enrollment.current_step === step.step_number;
-            const isSelected = selectedStep && selectedStep.id === step.id;
-            
-            return (
-              <div 
-                key={step.id} 
-                className={`flex items-start mb-4 last:mb-0 ${index < sortedSteps.length - 1 ? 'pb-4' : ''} ${
-                  isSelected ? 'bg-slate-50 rounded-lg p-2 -m-2' : ''
-                }`}
-                onClick={() => handleSelectStep(step)}
-                role="button"
-                tabIndex={0}
-              >
+        {/* Progress Bar */}
+        <div className="w-full bg-slate-200 rounded-full h-3">
+          <div 
+            className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
+            style={{ width: `${(enrollment.current_step / 6) * 100}%` }}
+          ></div>
+        </div>
+        
+        {/* Step Navigation */}
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-slate-600">Step {enrollment.current_step} of 6</span>
+          <span className="text-slate-600">{Math.round((enrollment.current_step / 6) * 100)}% Complete</span>
+        </div>
+
+        {/* Step Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {sortedSteps.map(step => (
+            <div 
+              key={step.id}
+              className={`
+                p-4 rounded-lg border-2 cursor-pointer transition-all
+                ${selectedStep?.id === step.id 
+                  ? 'border-blue-500 bg-blue-50' 
+                  : step.completed 
+                    ? 'border-green-200 bg-green-50' 
+                    : step.step_number === enrollment.current_step
+                      ? 'border-yellow-200 bg-yellow-50'
+                      : 'border-slate-200 bg-slate-50'
+                }
+              `}
+              onClick={() => handleSelectStep(step)}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-slate-700">
+                  Step {step.step_number}
+                </span>
                 <div className={`
-                  flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                  w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium
                   ${step.completed 
-                    ? 'bg-green-100 text-green-600 border-2 border-green-200' 
-                    : isCurrentStep
-                      ? 'bg-blue-100 text-blue-600 border-2 border-blue-200'
-                      : 'bg-slate-100 text-slate-600 border-2 border-slate-200'
+                    ? 'bg-green-500 text-white' 
+                    : step.step_number === enrollment.current_step
+                      ? 'bg-yellow-500 text-white'
+                      : 'bg-slate-300 text-slate-600'
                   }
                 `}>
                   {step.completed ? '✓' : step.step_number}
                 </div>
-                <div className="ml-4 flex-1 flex justify-between items-center">
-                  <div>
-                    <span className={`block text-sm font-medium ${
-                      step.completed 
-                        ? 'text-green-600' 
-                        : isCurrentStep
-                          ? 'text-blue-600'
-                          : 'text-slate-600'
-                    }`}>
-                      {step.step_name}
-                    </span>
-                    {step.completion_date && (
-                      <span className="text-xs text-slate-500">
-                        {new Date(step.completion_date).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {isCurrentStep && !step.completed && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStepComplete(enrollment.id, step.step_number);
-                      }}
-                      disabled={updatingStep === step.step_number}
-                      className={`px-3 py-1 text-xs rounded-lg ${
-                        updatingStep === step.step_number
-                          ? 'bg-blue-100 text-blue-400 cursor-not-allowed'
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                      } transition-colors`}
-                    >
-                      {updatingStep === step.step_number ? 'Updating...' : 'Complete'}
-                    </button>
-                  )}
-                </div>
-                {index < sortedSteps.length - 1 && (
-                  <div className="absolute left-4 top-8 bottom-0 w-[2px] bg-slate-200 -translate-x-1/2" />
-                )}
               </div>
-            );
-          })}
+              <h4 className="font-medium text-slate-800 mb-1">{step.step_name}</h4>
+              {step.completion_date && (
+                <p className="text-xs text-slate-500">
+                  Completed: {new Date(step.completion_date).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Step Actions */}
+        <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+          <button
+            onClick={handlePreviousStep}
+            disabled={navigatingStep || enrollment.current_step === 1}
+            className={`
+              px-4 py-2 text-sm font-medium rounded-lg transition-colors
+              ${navigatingStep || enrollment.current_step === 1
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }
+            `}
+          >
+            {navigatingStep ? 'Moving...' : 'Previous Step'}
+          </button>
+
+          <div className="flex space-x-3">
+            {/* Go to Registration Button - Show when enrollment is completed */}
+            {enrollment.status === 'Enrollment Confirmation' && enrollment.current_step === 6 && (
+              <button
+                onClick={() => navigate(`/registrations?enrollmentId=${enrollment.id}`)}
+                className="px-6 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
+              >
+                Go to Registration
+              </button>
+            )}
+
+            <button
+              onClick={handleNextStep}
+              disabled={navigatingStep || enrollment.current_step === 6}
+              className={`
+                px-4 py-2 text-sm font-medium rounded-lg transition-colors
+                ${navigatingStep || enrollment.current_step === 6
+                  ? 'bg-blue-300 text-white cursor-not-allowed'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+                }
+              `}
+            >
+              {navigatingStep ? 'Moving...' : 'Next Step'}
+            </button>
+          </div>
         </div>
 
         {/* Selected Step Details */}
         {selectedStep && (
           <div className="mt-6">
             <EnrollmentStepDetails 
-              step={selectedStep} 
-              isActive={activeEnrollment.current_step === selectedStep.step_number}
+              step={selectedStep}
+              enrollment={enrollment}
+              onStepComplete={handleStepComplete}
+              isUpdating={updatingStep === selectedStep.step_number}
             />
           </div>
         )}
-
-        {/* Step Navigation Buttons */}
-        <div className="mt-6 flex justify-between">
-          <button
-            onClick={handlePreviousStep}
-            disabled={navigatingStep || (activeEnrollment && activeEnrollment.current_step <= 1)}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-              navigatingStep || (activeEnrollment && activeEnrollment.current_step <= 1)
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-            } transition-colors`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Previous Step
-          </button>
-          
-          <button
-            onClick={handleNextStep}
-            disabled={navigatingStep || (activeEnrollment && activeEnrollment.current_step >= 6)}
-            className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-              navigatingStep || (activeEnrollment && activeEnrollment.current_step >= 6)
-                ? 'bg-blue-100 text-blue-400 cursor-not-allowed'
-                : 'bg-blue-500 text-white hover:bg-blue-600'
-            } transition-colors`}
-          >
-            Next Step
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
       </div>
     );
   };
@@ -446,6 +447,21 @@ const Enrollments = () => {
               <span>Step {enrollment.current_step} of 6</span>
               <span>{Math.round((enrollment.current_step / 6) * 100)}% Complete</span>
             </div>
+
+            {/* Show Go to Registration button in list view too */}
+            {enrollment.status === 'Enrollment Confirmation' && enrollment.current_step === 6 && (
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent card click
+                    navigate(`/registrations?enrollmentId=${enrollment.id}`);
+                  }}
+                  className="w-full px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  Go to Registration
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
