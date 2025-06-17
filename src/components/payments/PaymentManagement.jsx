@@ -1,611 +1,466 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { MagicCard, AnimatedList, ScrollProgress } from '../ui';
-import { supabase } from '../../lib/supabase';
-import PaymentGateway from './PaymentGateway';
+import { 
+  getPendingPayments, 
+  getStudentPayments, 
+  createPaymentTransaction, 
+  updatePaymentStatus,
+  getEnrollmentsForPayment,
+  generateReceiptNumber,
+  getStudentPaymentSummary
+} from '../../lib/api/payments';
+import { Toast } from '../common/Toast';
 
 const PaymentManagement = () => {
   const [activeTab, setActiveTab] = useState('pending');
-  const [paymentData, setPaymentData] = useState({
-    pendingPayments: [],
-    recentTransactions: [],
-    paymentPlans: [],
-    loading: true
-  });
+  const [pendingPayments, setPendingPayments] = useState([]);
+  const [studentPayments, setStudentPayments] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showGatewayModal, setShowGatewayModal] = useState(false);
-  const [showReceiptModal, setShowReceiptModal] = useState(false);
-  const [selectedReceipt, setSelectedReceipt] = useState(null);
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const [processing, setProcessing] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    enrollment_id: '',
+    payment_type: 'Registration Fee',
+    amount: '',
+    payment_method: 'Cash',
+    payment_reference: '',
+    description: ''
+  });
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  // Fetch payment data from database
   useEffect(() => {
-    fetchPaymentData();
+    loadPaymentData();
   }, []);
 
-  const fetchPaymentData = async () => {
+  const loadPaymentData = async () => {
     try {
-      setPaymentData(prev => ({ ...prev, loading: true }));
-
-      // Fetch pending payments (students with incomplete payment plans)
-      const { data: pendingPayments, error: pendingError } = await supabase
-        .from('payment_plans')
-        .select(`
-          *,
-          students (
-            student_id,
-            first_name,
-            last_name,
-            email,
-            programs (
-              name,
-              code
-            )
-          )
-        `)
-        .gt('remaining_amount', 0)
-        .eq('status', 'active');
-
-      if (pendingError) throw pendingError;
-
-      // Fetch recent transactions
-      const { data: recentTransactions, error: transError } = await supabase
-        .from('student_payments')
-        .select(`
-          *,
-          students (
-            student_id,
-            first_name,
-            last_name,
-            programs (
-              name,
-              code
-            )
-          )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (transError) throw transError;
-
-      // Fetch all payment plans for overview
-      const { data: paymentPlans, error: plansError } = await supabase
-        .from('payment_plans')
-        .select(`
-          *,
-          students (
-            student_id,
-            first_name,
-            last_name,
-            programs (
-              name,
-              code
-            )
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (plansError) throw plansError;
-
-      setPaymentData({
-        pendingPayments: pendingPayments || [],
-        recentTransactions: recentTransactions || [],
-        paymentPlans: paymentPlans || [],
-        loading: false
-      });
-
+      setLoading(true);
+      const [pendingData, paymentsData, enrollmentsData] = await Promise.all([
+        getPendingPayments(),
+        getStudentPayments(),
+        getEnrollmentsForPayment()
+      ]);
+      
+      setPendingPayments(pendingData);
+      setStudentPayments(paymentsData);
+      setEnrollments(enrollmentsData);
     } catch (error) {
-      console.error('Error fetching payment data:', error);
-      setPaymentData(prev => ({ ...prev, loading: false }));
+      console.error('Error loading payment data:', error);
+      showToast('Error loading payment data', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handlePaymentSuccess = async (paymentResult) => {
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    
     try {
-      // Generate receipt number
-      const receiptNumber = `RCP-${Date.now()}`;
+      if (!paymentForm.enrollment_id || !paymentForm.amount) {
+        showToast('Please fill in all required fields', 'error');
+        return;
+      }
 
-      // Update payment plan
-      const newPaidAmount = parseFloat(selectedPayment.paid_amount) + parseFloat(paymentAmount);
-      const newRemainingAmount = parseFloat(selectedPayment.total_amount) - newPaidAmount;
+      const paymentData = {
+        ...paymentForm,
+        amount: parseFloat(paymentForm.amount),
+        receipt_number: generateReceiptNumber(),
+        payment_status: 'Completed'
+      };
 
-      const { error: updateError } = await supabase
-        .from('payment_plans')
-        .update({
-          paid_amount: newPaidAmount,
-          remaining_amount: newRemainingAmount,
-          status: newRemainingAmount <= 0 ? 'completed' : 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedPayment.id);
-
-      if (updateError) throw updateError;
-
-      // Create entry in student_payments
-      await supabase
-        .from('student_payments')
-        .insert([{
-          student_id: selectedPayment.student_id,
-          payment_type: 'Tuition Fee',
-          amount: paymentAmount,
-          payment_method: 'online',
-          payment_reference: paymentResult.payment_id || paymentResult.order_id,
-          payment_status: 'Completed',
-          receipt_number: receiptNumber,
-          description: `Online payment for ${selectedPayment.students.programs.name}`,
-          created_by: 'system'
-        }]);
-
-      // Refresh data
-      await fetchPaymentData();
-      setShowGatewayModal(false);
+      await createPaymentTransaction(paymentData);
+      
+      showToast('Payment processed successfully', 'success');
       setShowPaymentModal(false);
-      setSelectedPayment(null);
-
-      alert('Payment processed successfully!');
-
+      setPaymentForm({
+        enrollment_id: '',
+        payment_type: 'Registration Fee',
+        amount: '',
+        payment_method: 'Cash',
+        payment_reference: '',
+        description: ''
+      });
+      
+      await loadPaymentData();
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Error processing payment. Please try again.');
+      showToast('Error processing payment', 'error');
     }
   };
 
-  const handlePaymentError = (error) => {
-    console.error('Payment error:', error);
-    const errorMessage = error?.error_message || 'Payment processing failed. Please try again.';
-    alert(`Payment failed: ${errorMessage}`);
-    setShowGatewayModal(false);
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-LK', {
+      style: 'currency',
+      currency: 'LKR',
+      minimumFractionDigits: 2
+    }).format(amount);
   };
 
-  const handlePaymentCancel = () => {
-    console.log('Payment cancelled by user');
-    setShowGatewayModal(false);
-  };
-
-  const initiatePayment = () => {
-    if (!selectedPayment || !paymentAmount || paymentAmount <= 0) {
-      alert('Please enter a valid payment amount');
-      return;
+  const getPaymentStatusColor = (status) => {
+    switch (status) {
+      case 'Completed': return 'bg-green-50 text-green-600';
+      case 'Pending': return 'bg-yellow-50 text-yellow-600';
+      case 'Failed': return 'bg-red-50 text-red-600';
+      default: return 'bg-gray-50 text-gray-600';
     }
-
-    if (parseFloat(paymentAmount) > parseFloat(selectedPayment.remaining_amount)) {
-      alert('Payment amount cannot exceed remaining amount');
-      return;
-    }
-
-    setShowPaymentModal(false);
-    setShowGatewayModal(true);
-  };
-
-  const generateReceipt = (transaction) => {
-    return {
-      receiptNumber: transaction.receipt_number || `RCP-${transaction.id.substr(0, 8)}`,
-      date: new Date(transaction.created_at).toLocaleDateString(),
-      studentName: `${transaction.students.first_name} ${transaction.students.last_name}`,
-      studentId: transaction.students.student_id,
-      program: transaction.students.programs.name,
-      amount: parseFloat(transaction.amount).toFixed(2),
-      paymentMethod: transaction.payment_method,
-      transactionId: transaction.payment_reference || transaction.id,
-      description: transaction.description
-    };
   };
 
   const renderPendingPayments = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-slate-800">Pending Payments</h3>
-        <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-sm font-medium">
-          {paymentData.pendingPayments.length} Pending
-        </span>
+    <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm">
+      <div className="flex justify-between items-center mb-8">
+        <h3 className="text-lg font-semibold text-slate-800">Pending Payments</h3>
+        <button 
+          onClick={() => setShowPaymentModal(true)}
+          className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg 
+            hover:bg-blue-600 focus:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 
+            transition-all duration-200"
+        >
+          Process Payment
+        </button>
       </div>
-
-      <div className="grid gap-4">
-        {paymentData.pendingPayments.map((payment) => (
-          <MagicCard key={payment.id} className="p-6">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h4 className="font-semibold text-slate-800">
-                    {payment.students.first_name} {payment.students.last_name}
-                  </h4>
-                  <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs font-medium">
-                    {payment.students.student_id}
+      
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      ) : pendingPayments.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-slate-500">No pending payments found</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {pendingPayments.map(payment => (
+            <div 
+              key={payment.id} 
+              className="group border border-slate-200 rounded-xl p-6 hover:border-blue-200 
+                hover:shadow-md transition-all duration-200"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <h4 className="text-base font-medium text-slate-800 group-hover:text-blue-600 
+                  transition-colors">
+                  {payment.student_name}
+                </h4>
+                <span className={`px-3 py-1 rounded-full text-xs font-medium
+                  ${payment.is_registration_incomplete 
+                    ? 'bg-red-50 text-red-600' 
+                    : 'bg-yellow-50 text-yellow-600'}`}
+                >
+                  {payment.is_registration_incomplete ? 'Registration Incomplete' : 'Pending'}
+                </span>
+              </div>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Program:</span>
+                  <span className="text-slate-700 font-medium">{payment.program}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Registration Fee:</span>
+                  <span className={`font-medium ${payment.pending_registration > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(payment.registration_paid)} / {formatCurrency(payment.registration_fee)}
                   </span>
                 </div>
-                <p className="text-slate-600 mb-3">{payment.students.programs.name}</p>
-                
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <span className="text-sm text-slate-500">Total Amount</span>
-                    <p className="font-semibold text-slate-800">
-                      LKR {parseFloat(payment.total_amount).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-slate-500">Paid Amount</span>
-                    <p className="font-semibold text-green-600">
-                      LKR {parseFloat(payment.paid_amount).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-slate-500">Remaining</span>
-                    <p className="font-semibold text-orange-600">
-                      LKR {parseFloat(payment.remaining_amount).toLocaleString()}
-                    </p>
-                  </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Program Fee:</span>
+                  <span className={`font-medium ${payment.pending_program > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(payment.program_paid)} / {formatCurrency(payment.program_fee)}
+                  </span>
                 </div>
-
-                {/* Progress Bar */}
-                <div className="w-full bg-slate-200 rounded-full h-2 mb-4">
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${(parseFloat(payment.paid_amount) / parseFloat(payment.total_amount)) * 100}%` 
-                    }}
-                  ></div>
+                <div className="border-t pt-3">
+                  <div className="flex justify-between text-sm font-semibold">
+                    <span className="text-slate-700">Total Pending:</span>
+                    <span className="text-red-600">{formatCurrency(payment.total_pending)}</span>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex gap-2 ml-4">
-                <button
+              
+              <div className="flex gap-3">
+                <button 
+                  className="flex-1 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 
+                    hover:bg-slate-200 focus:bg-slate-300 rounded-lg transition-all duration-200"
                   onClick={() => {
                     setSelectedPayment(payment);
-                    setPaymentAmount(payment.remaining_amount);
+                    setPaymentForm(prev => ({
+                      ...prev,
+                      enrollment_id: payment.id,
+                      amount: payment.pending_registration > 0 ? payment.pending_registration.toString() : payment.pending_program.toString(),
+                      payment_type: payment.pending_registration > 0 ? 'Registration Fee' : 'Program Fee'
+                    }));
                     setShowPaymentModal(true);
                   }}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 >
-                  Make Payment
+                  Pay Now
+                </button>
+                <button 
+                  className="flex-1 px-4 py-2.5 text-sm text-white bg-blue-500 
+                    hover:bg-blue-600 focus:bg-blue-700 rounded-lg transition-all duration-200 
+                    transform hover:-translate-y-0.5"
+                >
+                  Send Reminder
                 </button>
               </div>
             </div>
-          </MagicCard>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
   const renderRecentTransactions = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-xl font-semibold text-slate-800">Recent Transactions</h3>
-        <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-sm font-medium">
-          {paymentData.recentTransactions.length} Transactions
-        </span>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm">
+      <h3 className="text-lg font-semibold text-slate-800 mb-8">Recent Transactions</h3>
+      
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      ) : studentPayments.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-slate-500">No transactions found</p>
+        </div>
+      ) : (
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+          <table className="w-full" role="table">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Student
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Program
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Method
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Actions
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Date
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
-              {paymentData.recentTransactions.map((transaction) => (
-                <tr key={transaction.id} className="hover:bg-slate-50">
+            <tbody className="divide-y divide-slate-100">
+              {studentPayments.slice(0, 10).map((transaction) => (
+                <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-slate-900">
-                        {transaction.students.first_name} {transaction.students.last_name}
-                      </div>
-                      <div className="text-sm text-slate-500">
-                        {transaction.students.student_id}
-                      </div>
+                    <div className="text-sm font-medium text-slate-800">
+                      {transaction.students?.first_name} {transaction.students?.last_name}
+                    </div>
+                    <div className="text-sm text-slate-500">
+                      {transaction.students?.email}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-slate-900">
-                      {transaction.students.programs.name}
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {transaction.payment_type}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">
+                    {formatCurrency(transaction.amount)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {transaction.payment_method}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-slate-900">
-                      LKR {parseFloat(transaction.amount).toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                      {transaction.payment_method}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                    {new Date(transaction.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      transaction.payment_status === 'Completed' 
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(transaction.payment_status)}`}>
                       {transaction.payment_status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => {
-                        setSelectedReceipt(generateReceipt(transaction));
-                        setShowReceiptModal(true);
-                      }}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      View Receipt
-                    </button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
+                    {new Date(transaction.payment_date || transaction.created_at).toLocaleDateString()}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
+      )}
     </div>
   );
 
-  const PaymentModal = () => {
-    if (!selectedPayment) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-          <h3 className="text-xl font-semibold mb-6">Process Payment</h3>
+  const renderPaymentModal = () => (
+    showPaymentModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-xl p-6 w-full max-w-md">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold text-slate-800">Process Payment</h3>
+            <button 
+              onClick={() => setShowPaymentModal(false)}
+              className="text-slate-400 hover:text-slate-600"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           
-          <div className="space-y-4 mb-6">
+          <form onSubmit={handlePaymentSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
                 Student
               </label>
-              <p className="text-slate-900">
-                {selectedPayment.students.first_name} {selectedPayment.students.last_name}
-              </p>
+              <select 
+                value={paymentForm.enrollment_id}
+                onChange={(e) => setPaymentForm({...paymentForm, enrollment_id: e.target.value})}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-sm 
+                  focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                required
+              >
+                <option value="">Select student</option>
+                {enrollments.map(enrollment => (
+                  <option key={enrollment.id} value={enrollment.id}>
+                    {enrollment.student_name} - {enrollment.programs?.name}
+                  </option>
+                ))}
+              </select>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Program
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Payment Type
               </label>
-              <p className="text-slate-900">{selectedPayment.students.programs.name}</p>
+              <select 
+                value={paymentForm.payment_type}
+                onChange={(e) => setPaymentForm({...paymentForm, payment_type: e.target.value})}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-sm 
+                  focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              >
+                <option value="Registration Fee">Registration Fee</option>
+                <option value="Program Fee">Program Fee</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Remaining Amount
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Amount (LKR)
               </label>
-              <p className="text-orange-600 font-semibold">
-                LKR {parseFloat(selectedPayment.remaining_amount).toLocaleString()}
-              </p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Payment Amount
-              </label>
-              <input
+              <input 
                 type="number"
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                max={selectedPayment.remaining_amount}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={paymentForm.amount}
+                onChange={(e) => setPaymentForm({...paymentForm, amount: e.target.value})}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-sm 
+                  focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                required
+                min="0"
+                step="0.01"
               />
             </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => {
-                setShowPaymentModal(false);
-                setSelectedPayment(null);
-              }}
-              className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={initiatePayment}
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
-              Proceed to Payment
-            </button>
-          </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Payment Method
+              </label>
+              <select 
+                value={paymentForm.payment_method}
+                onChange={(e) => setPaymentForm({...paymentForm, payment_method: e.target.value})}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-sm 
+                  focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+              >
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Reference Number
+              </label>
+              <input 
+                type="text"
+                value={paymentForm.payment_reference}
+                onChange={(e) => setPaymentForm({...paymentForm, payment_reference: e.target.value})}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-sm 
+                  focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                placeholder="Optional"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Description
+              </label>
+              <textarea 
+                value={paymentForm.description}
+                onChange={(e) => setPaymentForm({...paymentForm, description: e.target.value})}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 text-sm 
+                  focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+                rows="3"
+                placeholder="Optional notes"
+              />
+            </div>
+            
+            <div className="flex gap-3 pt-4">
+              <button 
+                type="button"
+                onClick={() => setShowPaymentModal(false)}
+                className="flex-1 px-4 py-2.5 text-sm text-slate-600 bg-slate-100 
+                  hover:bg-slate-200 rounded-lg transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                className="flex-1 px-4 py-2.5 text-sm text-white bg-blue-500 
+                  hover:bg-blue-600 focus:bg-blue-700 rounded-lg transition-all duration-200"
+              >
+                Process Payment
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    );
-  };
-
-  const PaymentGatewayModal = () => {
-    if (!selectedPayment || !showGatewayModal) return null;
-
-    const gatewayData = {
-      orderId: `ORD-${Date.now()}-${selectedPayment.students.student_id}`,
-      amount: paymentAmount,
-      firstName: selectedPayment.students.first_name,
-      lastName: selectedPayment.students.last_name,
-      email: selectedPayment.students.email || 'student@icbt.lk',
-      description: `Payment for ${selectedPayment.students.programs.name}`,
-      phone: '0771234567',
-      address: 'ICBT Campus',
-      city: 'Colombo'
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="max-w-md w-full mx-4">
-          <div className="mb-4 text-center">
-            <button
-              onClick={() => setShowGatewayModal(false)}
-              className="text-white hover:text-slate-300 text-sm"
-            >
-              ← Back to Payment Details
-            </button>
-          </div>
-          <PaymentGateway
-            paymentData={gatewayData}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-            onCancel={handlePaymentCancel}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  const ReceiptModal = () => {
-    if (!selectedReceipt) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-          <div className="text-center mb-6">
-            <h3 className="text-xl font-semibold mb-2">Payment Receipt</h3>
-            <p className="text-slate-500">ICBT Campus</p>
-          </div>
-          
-          <div className="space-y-3 mb-6 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-600">Receipt No:</span>
-              <span className="font-medium">{selectedReceipt.receiptNumber}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Date:</span>
-              <span className="font-medium">{selectedReceipt.date}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Student:</span>
-              <span className="font-medium">{selectedReceipt.studentName}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Student ID:</span>
-              <span className="font-medium">{selectedReceipt.studentId}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Program:</span>
-              <span className="font-medium">{selectedReceipt.program}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Payment Method:</span>
-              <span className="font-medium">{selectedReceipt.paymentMethod}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-600">Transaction ID:</span>
-              <span className="font-medium">{selectedReceipt.transactionId}</span>
-            </div>
-            <hr className="my-3" />
-            <div className="flex justify-between text-lg font-semibold">
-              <span>Amount Paid:</span>
-              <span>LKR {selectedReceipt.amount}</span>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => {
-                setShowReceiptModal(false);
-                setSelectedReceipt(null);
-              }}
-              className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50"
-            >
-              Close
-            </button>
-            <button
-              onClick={() => window.print()}
-              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
-              Print Receipt
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  if (paymentData.loading) {
-    return (
-      <div className="p-6 sm:p-8 max-w-[1600px] mx-auto">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-slate-200 rounded w-1/4"></div>
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-slate-200 rounded-xl"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+    )
+  );
 
   return (
-    <div className="p-6 sm:p-8 max-w-[1600px] mx-auto">
-      <ScrollProgress />
-      
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-slate-800 mb-3">Payment Management</h1>
-        <p className="text-lg text-slate-500">Manage student payments, process transactions, and generate receipts</p>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="border-b border-slate-200 mb-8">
-        <div className="flex space-x-8">
-          <button
+    <div className="p-6 sm:p-8 space-y-8">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-slate-800">Payment Management</h2>
+        <div className="flex bg-slate-100 rounded-lg p-1">
+          <button 
             onClick={() => setActiveTab('pending')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'pending'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+              activeTab === 'pending' 
+                ? 'bg-white text-blue-600 shadow-sm' 
+                : 'text-slate-600 hover:text-slate-800'
             }`}
           >
-            Pending Payments ({paymentData.pendingPayments.length})
+            Pending Payments
           </button>
-          <button
+          <button 
             onClick={() => setActiveTab('transactions')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-              activeTab === 'transactions'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+              activeTab === 'transactions' 
+                ? 'bg-white text-blue-600 shadow-sm' 
+                : 'text-slate-600 hover:text-slate-800'
             }`}
           >
-            Recent Transactions ({paymentData.recentTransactions.length})
+            Transactions
           </button>
         </div>
       </div>
-
-      {/* Tab Content */}
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {activeTab === 'pending' && renderPendingPayments()}
-        {activeTab === 'transactions' && renderRecentTransactions()}
-      </motion.div>
-
-      {/* Modals */}
-      {showPaymentModal && <PaymentModal />}
-      {showGatewayModal && <PaymentGatewayModal />}
-      {showReceiptModal && <ReceiptModal />}
+      
+      {activeTab === 'pending' && renderPendingPayments()}
+      {activeTab === 'transactions' && renderRecentTransactions()}
+      
+      {renderPaymentModal()}
+      
+      <Toast 
+        show={toast.show} 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ show: false, message: '', type: 'success' })} 
+      />
     </div>
   );
 };

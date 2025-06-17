@@ -6,6 +6,14 @@ const Programs = () => {
   const [activeTab, setActiveTab] = useState('details');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
+  // Function to handle sending marketing materials
+  const handleSendMaterials = (material) => {
+    // TODO: Implement functionality to send marketing materials
+    // This could open an email client, integrate with a messaging system, etc.
+    console.log('Sending marketing material:', material);
+    alert(`Sending ${material.name} to program marketing materials...`);
+  };
+
   // Enhanced program data with additional details for ICBT programs
   const enhancedPrograms = ALL_PROGRAMS.map(program => ({
     ...program,
@@ -285,15 +293,27 @@ const Programs = () => {
                       {material.type} • {material.size}
                     </span>
                   </div>
-                  <button 
-                    className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg
-                      hover:bg-blue-500 hover:text-white hover:border-transparent
-                      focus:ring-2 focus:ring-blue-500/20
-                      transition-all duration-200 ease-in-out transform group-hover:-translate-y-0.5"
-                    aria-label={`Download ${material.name}`}
-                  >
-                    Download
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <button 
+                      className="px-4 py-2 text-sm text-slate-600 bg-white border border-slate-200 rounded-lg
+                        hover:bg-blue-500 hover:text-white hover:border-transparent
+                        focus:ring-2 focus:ring-blue-500/20
+                        transition-all duration-200 ease-in-out transform group-hover:-translate-y-0.5"
+                      aria-label={`Download ${material.name}`}
+                    >
+                      Download
+                    </button>
+                    <button 
+                      onClick={() => handleSendMaterials(material)}
+                      className="px-4 py-2 text-sm text-white bg-green-500 border border-green-500 rounded-lg
+                        hover:bg-green-600 hover:border-green-600
+                        focus:ring-2 focus:ring-green-500/20
+                        transition-all duration-200 ease-in-out transform group-hover:-translate-y-0.5"
+                      aria-label={`Send ${material.name} to program marketing materials`}
+                    >
+                      Send to Marketing
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
