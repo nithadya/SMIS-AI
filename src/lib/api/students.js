@@ -184,13 +184,29 @@ export const getStudentByStudentId = async (studentId) => {
   }
 };
 
-// Get student payment history
+// Get student payment history by enrollment_id
 export const getStudentPayments = async (studentId) => {
   try {
+    // First get the student's enrollment_id
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select('enrollment_id')
+      .eq('id', studentId)
+      .single();
+
+    if (studentError) {
+      console.error('Error fetching student:', studentError);
+      throw studentError;
+    }
+
+    if (!student.enrollment_id) {
+      return { data: [], error: null };
+    }
+
     const { data, error } = await supabase
       .from('student_payments')
       .select('*')
-      .eq('student_id', studentId)
+      .eq('enrollment_id', student.enrollment_id)
       .order('payment_date', { ascending: false });
 
     if (error) {
@@ -202,6 +218,157 @@ export const getStudentPayments = async (studentId) => {
   } catch (error) {
     console.error('Error in getStudentPayments:', error);
     return { data: null, error: error.message };
+  }
+};
+
+// Get student payment summary and history by enrollment_id
+export const getStudentPaymentsByEnrollment = async (enrollmentId) => {
+  try {
+    const { data, error } = await supabase
+      .from('student_payments')
+      .select(`
+        *,
+        enrollments!inner(
+          id,
+          student_name,
+          program_id,
+          programs(id, name, code)
+        )
+      `)
+      .eq('enrollment_id', enrollmentId)
+      .order('payment_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching enrollment payments:', error);
+      throw error;
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error in getStudentPaymentsByEnrollment:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+// Get student payment summary including fee structure - FIXED VERSION
+export const getStudentPaymentSummaryByEnrollment = async (studentId) => {
+  try {
+    // First get the student with their enrollment information
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select(`
+        id,
+        student_id,
+        first_name,
+        last_name,
+        email,
+        enrollment_id,
+        program_id,
+        programs:program_id (
+          id,
+          name,
+          code
+        )
+      `)
+      .eq('id', studentId)
+      .single();
+
+    if (studentError) {
+      console.error('Error fetching student:', studentError);
+      throw studentError;
+    }
+
+    if (!student.enrollment_id) {
+      // If no enrollment_id, return basic structure with zeros
+      return {
+        data: {
+          student,
+          totalRequired: 0,
+          totalPaid: 0,
+          totalDue: 0,
+          registrationFee: 0,
+          programFee: 0,
+          registrationPaid: 0,
+          programPaid: 0,
+          payments: []
+        },
+        error: null
+      };
+    }
+
+    // Get fee structure for the program
+    const { data: feeStructure, error: feeError } = await supabase
+      .from('fee_structure')
+      .select('*')
+      .eq('program_id', student.program_id);
+
+    // If no fee structure, use defaults
+    const registrationFee = feeStructure?.find(fee => fee.fee_type === 'Registration Fee')?.amount || 50000;
+    const programFee = feeStructure?.find(fee => fee.fee_type === 'Program Fee')?.amount || 0;
+
+    // Get all payments for this enrollment
+    const { data: payments, error: paymentsError } = await supabase
+      .from('student_payments')
+      .select('*')
+      .eq('enrollment_id', student.enrollment_id)
+      .order('created_at', { ascending: false });
+
+    // Calculate totals (even if payments query fails)
+    const validPayments = payments || [];
+    const completedPayments = validPayments.filter(p => p.payment_status === 'Completed');
+    
+    const registrationPaid = completedPayments
+      .filter(p => p.payment_type === 'Registration Fee')
+      .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    
+    const programPaid = completedPayments
+      .filter(p => p.payment_type === 'Program Fee')
+      .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+    const totalRequired = parseFloat(registrationFee) + parseFloat(programFee);
+    const totalPaid = registrationPaid + programPaid;
+    const totalDue = Math.max(0, totalRequired - totalPaid);
+
+    return {
+      data: {
+        student,
+        totalRequired,
+        totalPaid,
+        totalDue,
+        registrationFee: parseFloat(registrationFee),
+        programFee: parseFloat(programFee),
+        registrationPaid,
+        programPaid,
+        payments: validPayments.map(payment => ({
+          id: payment.id,
+          payment_date: payment.payment_date,
+          created_at: payment.created_at,
+          amount: parseFloat(payment.amount || 0),
+          payment_type: payment.payment_type,
+          payment_status: payment.payment_status,
+          payment_method: payment.payment_method,
+          payment_reference: payment.payment_reference,
+          description: payment.description
+        }))
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('Error in getStudentPaymentSummaryByEnrollment:', error);
+    return { 
+      data: {
+        student: null,
+        totalRequired: 0,
+        totalPaid: 0,
+        totalDue: 0,
+        registrationFee: 0,
+        programFee: 0,
+        registrationPaid: 0,
+        programPaid: 0,
+        payments: []
+      }, 
+      error: error.message 
+    };
   }
 };
 
@@ -277,7 +444,14 @@ export const addStudentPayment = async (paymentData) => {
     const user = getCurrentUser();
     
     const dataToInsert = {
-      ...paymentData,
+      enrollment_id: paymentData.enrollment_id,
+      payment_type: paymentData.payment_type,
+      amount: parseFloat(paymentData.amount),
+      payment_method: paymentData.payment_method,
+      payment_status: 'Completed',
+      payment_date: new Date().toISOString(),
+      payment_reference: paymentData.payment_reference || null,
+      description: paymentData.description || null,
       created_at: new Date().toISOString(),
       created_by: user?.email || 'system'
     };

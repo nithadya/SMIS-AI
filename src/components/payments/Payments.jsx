@@ -8,6 +8,7 @@ import {
   generateReceiptNumber,
   getStudentPaymentSummary
 } from '../../lib/api/payments';
+import { searchStudents, getStudentPaymentSummaryByEnrollment } from '../../lib/api/students';
 import { Toast } from '../common/Toast';
 
 const Payments = () => {
@@ -18,6 +19,15 @@ const Payments = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  
+  // Search functionality states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedStudentPayments, setSelectedStudentPayments] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  
   const [paymentForm, setPaymentForm] = useState({
     enrollment_id: '',
     payment_type: 'Registration Fee',
@@ -31,6 +41,59 @@ const Payments = () => {
   useEffect(() => {
     loadPaymentData();
   }, []);
+
+  // Search functionality
+  useEffect(() => {
+    if (searchQuery.trim().length >= 2) {
+      const timeoutId = setTimeout(() => {
+        handleStudentSearch(searchQuery);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  }, [searchQuery]);
+
+  const handleStudentSearch = async (query) => {
+    try {
+      setSearchLoading(true);
+      const { data, error } = await searchStudents(query);
+      if (error) {
+        console.error('Search error:', error);
+        return;
+      }
+      setSearchResults(data || []);
+      setShowSearchResults(true);
+    } catch (error) {
+      console.error('Error searching students:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSelectStudent = async (student) => {
+    try {
+      setSelectedStudent(student);
+      setSearchQuery(`${student.first_name} ${student.last_name}`);
+      setShowSearchResults(false);
+      
+      // Load student payment data - need to find enrollment_id first
+      // For now, use the student.id as enrollment_id (this might need adjustment based on your data structure)
+      const { data: paymentData } = await getStudentPaymentSummaryByEnrollment(student.id);
+      setSelectedStudentPayments(paymentData);
+    } catch (error) {
+      console.error('Error loading student payment data:', error);
+      showToast('Error loading student payment data', 'error');
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSelectedStudent(null);
+    setSelectedStudentPayments(null);
+    setShowSearchResults(false);
+  };
 
   const loadPaymentData = async () => {
     try {
@@ -109,6 +172,202 @@ const Payments = () => {
       default: return 'bg-gray-50 text-gray-600';
     }
   };
+
+  const renderStudentSearch = () => (
+    <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm">
+      <h3 className="text-lg font-semibold text-slate-800 mb-6">Student Payment Search</h3>
+      
+      {/* Search Input */}
+      <div className="relative mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search student by name..."
+            className="w-full px-4 py-3 pl-10 pr-10 rounded-lg border border-slate-200 text-sm 
+              focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
+          />
+          <svg 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {searchQuery && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        
+        {/* Search Results Dropdown */}
+        {showSearchResults && searchResults.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+            {searchResults.map((student) => (
+              <button
+                key={student.id}
+                onClick={() => handleSelectStudent(student)}
+                className="w-full px-4 py-3 text-left hover:bg-slate-50 border-b border-slate-100 last:border-b-0"
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">
+                      {student.first_name} {student.last_name}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {student.student_id} • {student.email}
+                    </p>
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {student.programs?.name}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+        
+        {searchLoading && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 p-4">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              <span className="ml-2 text-sm text-slate-500">Searching...</span>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* Selected Student Payment Info */}
+      {selectedStudent && selectedStudentPayments && (
+        <div className="space-y-6">
+          <div className="border border-slate-200 rounded-lg p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h4 className="text-lg font-medium text-slate-800">
+                  {selectedStudent.first_name} {selectedStudent.last_name}
+                </h4>
+                <p className="text-sm text-slate-500">
+                  ID: {selectedStudent.student_id} • {selectedStudent.email}
+                </p>
+                <p className="text-sm text-slate-500">
+                  Program: {selectedStudent.programs?.name}
+                </p>
+              </div>
+              <button
+                onClick={clearSearch}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Payment Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-sm text-blue-600 font-medium">Total Required</p>
+                <p className="text-xl font-bold text-blue-800">
+                  {formatCurrency(selectedStudentPayments.totalRequired || 0)}
+                </p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <p className="text-sm text-green-600 font-medium">Total Paid</p>
+                <p className="text-xl font-bold text-green-800">
+                  {formatCurrency(selectedStudentPayments.totalPaid || 0)}
+                </p>
+              </div>
+              <div className="bg-red-50 rounded-lg p-4">
+                <p className="text-sm text-red-600 font-medium">Total Due</p>
+                <p className="text-xl font-bold text-red-800">
+                  {formatCurrency(selectedStudentPayments.totalDue || 0)}
+                </p>
+              </div>
+            </div>
+            
+            {/* Fee Breakdown */}
+            <div className="space-y-3 mb-6">
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Registration Fee:</span>
+                <div className="text-right">
+                  <span className={`text-sm font-medium ${
+                    (selectedStudentPayments.registrationPaid || 0) >= (selectedStudentPayments.registrationFee || 0) 
+                      ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {formatCurrency(selectedStudentPayments.registrationPaid || 0)} / {formatCurrency(selectedStudentPayments.registrationFee || 0)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-600">Program Fee:</span>
+                <div className="text-right">
+                  <span className={`text-sm font-medium ${
+                    (selectedStudentPayments.programPaid || 0) >= (selectedStudentPayments.programFee || 0) 
+                      ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {formatCurrency(selectedStudentPayments.programPaid || 0)} / {formatCurrency(selectedStudentPayments.programFee || 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Payment History */}
+            {selectedStudentPayments.payments && selectedStudentPayments.payments.length > 0 && (
+              <div>
+                <h5 className="text-md font-medium text-slate-800 mb-3">Payment History</h5>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200">
+                        <th className="text-left py-2 text-slate-600">Date</th>
+                        <th className="text-left py-2 text-slate-600">Type</th>
+                        <th className="text-left py-2 text-slate-600">Amount</th>
+                        <th className="text-left py-2 text-slate-600">Method</th>
+                        <th className="text-left py-2 text-slate-600">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedStudentPayments.payments.map((payment) => (
+                        <tr key={payment.id} className="border-b border-slate-100">
+                          <td className="py-2 text-slate-700">
+                            {new Date(payment.payment_date || payment.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="py-2 text-slate-700">{payment.payment_type}</td>
+                          <td className="py-2 font-medium text-slate-800">
+                            {formatCurrency(payment.amount)}
+                          </td>
+                          <td className="py-2 text-slate-700">{payment.payment_method}</td>
+                          <td className="py-2">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(payment.payment_status)}`}>
+                              {payment.payment_status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {selectedStudent && !selectedStudentPayments && (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-slate-500 mt-2">Loading payment data...</p>
+        </div>
+      )}
+    </div>
+  );
 
   const renderPendingPayments = () => (
     <div className="bg-white rounded-xl p-6 sm:p-8 shadow-sm">
@@ -198,10 +457,17 @@ const Payments = () => {
                 </button>
                 <button 
                   className="flex-1 px-4 py-2.5 text-sm text-white bg-blue-500 
-                    hover:bg-blue-600 focus:bg-blue-700 rounded-lg transition-all duration-200 
-                    transform hover:-translate-y-0.5"
+                    hover:bg-blue-600 focus:bg-blue-700 rounded-lg transition-all duration-200"
+                  onClick={async () => {
+                    try {
+                      const summary = await getStudentPaymentSummary(payment.id);
+                      alert(`Payment Summary for ${payment.student_name}:\n\nTotal Required: ${formatCurrency(summary.total_required)}\nTotal Paid: ${formatCurrency(summary.total_paid)}\nTotal Pending: ${formatCurrency(summary.total_pending)}\n\nPayments Made: ${summary.payments.length}`);
+                    } catch (error) {
+                      showToast('Error loading payment summary', 'error');
+                    }
+                  }}
                 >
-                  Send Reminder
+                  View Details
                 </button>
               </div>
             </div>
@@ -438,6 +704,16 @@ const Payments = () => {
             Pending Payments
           </button>
           <button 
+            onClick={() => setActiveTab('search')}
+            className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+              activeTab === 'search' 
+                ? 'bg-white text-blue-600 shadow-sm' 
+                : 'text-slate-600 hover:text-slate-800'
+            }`}
+          >
+            Student Search
+          </button>
+          <button 
             onClick={() => setActiveTab('transactions')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
               activeTab === 'transactions' 
@@ -451,6 +727,7 @@ const Payments = () => {
       </div>
       
       {activeTab === 'pending' && renderPendingPayments()}
+      {activeTab === 'search' && renderStudentSearch()}
       {activeTab === 'transactions' && renderRecentTransactions()}
       
       {renderPaymentModal()}

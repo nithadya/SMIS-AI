@@ -47,8 +47,13 @@ export const getStudentPayments = async () => {
       .from('student_payments')
       .select(`
         *,
-        students(id, first_name, last_name, email, enrollment_id),
-        enrollments(id, student_name, program_id, status)
+        enrollments(
+          id, 
+          student_name, 
+          program_id,
+          status,
+          programs(id, name, code)
+        )
       `)
       .order('created_at', { ascending: false });
 
@@ -60,10 +65,10 @@ export const getStudentPayments = async () => {
   }
 };
 
-// Get pending payments with detailed calculation
+// Get pending payments with detailed calculation - FIXED VERSION
 export const getPendingPayments = async () => {
   try {
-    // Get all enrollments with their programs and fee structures
+    // First, get all enrollments with their programs
     const { data: enrollments, error: enrollmentsError } = await supabase
       .from('enrollments')
       .select(`
@@ -72,49 +77,59 @@ export const getPendingPayments = async () => {
         program_id,
         status,
         created_at,
-        programs(id, name, code),
-        student_payments(payment_type, amount, payment_status)
+        programs(id, name, code)
       `);
 
     if (enrollmentsError) throw enrollmentsError;
 
-    // Get fee structures for all programs
+    // Get all fee structures
     const { data: feeStructures, error: feeError } = await supabase
       .from('fee_structure')
       .select('*');
 
     if (feeError) throw feeError;
 
+    // Get all student payments
+    const { data: allPayments, error: paymentsError } = await supabase
+      .from('student_payments')
+      .select('*')
+      .eq('payment_status', 'Completed');
+
+    if (paymentsError) throw paymentsError;
+
     const pendingPayments = [];
 
     for (const enrollment of enrollments) {
+      // Get fee structure for this program
       const programFees = feeStructures.filter(fee => fee.program_id === enrollment.program_id);
       
-      // Calculate total fees
+      // Calculate required amounts
       const registrationFee = programFees.find(fee => fee.fee_type === 'Registration Fee')?.amount || 50000;
       const programFee = programFees.find(fee => fee.fee_type === 'Program Fee')?.amount || 0;
-      const totalRequired = parseFloat(registrationFee) + parseFloat(programFee);
-
-      // Calculate total paid
-      const totalPaid = enrollment.student_payments
-        ?.filter(payment => payment.payment_status === 'Completed')
-        ?.reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0) || 0;
+      
+      // Get payments for this enrollment
+      const enrollmentPayments = allPayments.filter(payment => payment.enrollment_id === enrollment.id);
+      
+      // Calculate paid amounts
+      const registrationPaid = enrollmentPayments
+        .filter(payment => payment.payment_type === 'Registration Fee')
+        .reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0);
+      
+      const programPaid = enrollmentPayments
+        .filter(payment => payment.payment_type === 'Program Fee')
+        .reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0);
 
       // Calculate pending amounts
-      const registrationPaid = enrollment.student_payments
-        ?.filter(payment => payment.payment_type === 'Registration Fee' && payment.payment_status === 'Completed')
-        ?.reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0) || 0;
-
-      const programPaid = enrollment.student_payments
-        ?.filter(payment => payment.payment_type === 'Program Fee' && payment.payment_status === 'Completed')
-        ?.reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0) || 0;
-
       const pendingRegistration = Math.max(0, parseFloat(registrationFee) - registrationPaid);
       const pendingProgram = Math.max(0, parseFloat(programFee) - programPaid);
       const totalPending = pendingRegistration + pendingProgram;
+      const totalPaid = registrationPaid + programPaid;
+      const totalRequired = parseFloat(registrationFee) + parseFloat(programFee);
 
-      // Only include if there are pending payments or first payment was below registration fee
-      if (totalPending > 0 || (totalPaid > 0 && registrationPaid < parseFloat(registrationFee))) {
+      // Include if there are pending payments OR if registration is incomplete
+      const isRegistrationIncomplete = registrationPaid < parseFloat(registrationFee);
+      
+      if (totalPending > 0 || isRegistrationIncomplete) {
         pendingPayments.push({
           id: enrollment.id,
           student_name: enrollment.student_name,
@@ -131,7 +146,8 @@ export const getPendingPayments = async () => {
           total_pending: totalPending,
           enrollment_status: enrollment.status,
           created_at: enrollment.created_at,
-          is_registration_incomplete: registrationPaid < parseFloat(registrationFee)
+          is_registration_incomplete: isRegistrationIncomplete,
+          payment_count: enrollmentPayments.length
         });
       }
     }
@@ -143,24 +159,29 @@ export const getPendingPayments = async () => {
   }
 };
 
-// Create a new payment transaction
+// Create a new payment transaction - FIXED VERSION
 export const createPaymentTransaction = async (paymentData) => {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     
+    // Validate required fields
+    if (!paymentData.enrollment_id || !paymentData.amount) {
+      throw new Error('Enrollment ID and amount are required');
+    }
+
     const { data, error } = await supabase
       .from('student_payments')
       .insert([{
-        student_id: paymentData.student_id,
         enrollment_id: paymentData.enrollment_id,
-        payment_type: paymentData.payment_type,
-        amount: paymentData.amount,
-        payment_method: paymentData.payment_method,
+        payment_type: paymentData.payment_type || 'Registration Fee',
+        amount: parseFloat(paymentData.amount),
+        payment_method: paymentData.payment_method || 'Cash',
         payment_reference: paymentData.payment_reference,
         payment_status: paymentData.payment_status || 'Completed',
         description: paymentData.description,
         receipt_number: paymentData.receipt_number,
-        created_by: user.email || 'system'
+        created_by: user.email || 'system',
+        payment_date: new Date().toISOString()
       }])
       .select();
 
@@ -192,7 +213,7 @@ export const updatePaymentStatus = async (paymentId, status) => {
   }
 };
 
-// Get payment summary for a student
+// Get payment summary for a student - FIXED VERSION
 export const getStudentPaymentSummary = async (enrollmentId) => {
   try {
     const { data: enrollment, error: enrollmentError } = await supabase
@@ -201,14 +222,14 @@ export const getStudentPaymentSummary = async (enrollmentId) => {
         id,
         student_name,
         program_id,
-        programs(id, name, code),
-        student_payments(payment_type, amount, payment_status, payment_date)
+        programs(id, name, code)
       `)
       .eq('id', enrollmentId)
       .single();
 
     if (enrollmentError) throw enrollmentError;
 
+    // Get fee structure for the program
     const { data: feeStructure, error: feeError } = await supabase
       .from('fee_structure')
       .select('*')
@@ -216,11 +237,19 @@ export const getStudentPaymentSummary = async (enrollmentId) => {
 
     if (feeError) throw feeError;
 
+    // Get all payments for this enrollment
+    const { data: payments, error: paymentsError } = await supabase
+      .from('student_payments')
+      .select('*')
+      .eq('enrollment_id', enrollmentId)
+      .order('created_at', { ascending: false });
+
+    if (paymentsError) throw paymentsError;
+
     const registrationFee = feeStructure.find(fee => fee.fee_type === 'Registration Fee')?.amount || 50000;
     const programFee = feeStructure.find(fee => fee.fee_type === 'Program Fee')?.amount || 0;
 
-    const payments = enrollment.student_payments || [];
-    const completedPayments = payments.filter(p => p.payment_status === 'Completed');
+    const completedPayments = (payments || []).filter(p => p.payment_status === 'Completed');
     
     const registrationPaid = completedPayments
       .filter(p => p.payment_type === 'Registration Fee')
@@ -229,6 +258,9 @@ export const getStudentPaymentSummary = async (enrollmentId) => {
     const programPaid = completedPayments
       .filter(p => p.payment_type === 'Program Fee')
       .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+
+    const totalPaid = registrationPaid + programPaid;
+    const totalRequired = parseFloat(registrationFee) + parseFloat(programFee);
 
     return {
       enrollment_id: enrollmentId,
@@ -240,9 +272,12 @@ export const getStudentPaymentSummary = async (enrollmentId) => {
       program_paid: programPaid,
       pending_registration: Math.max(0, parseFloat(registrationFee) - registrationPaid),
       pending_program: Math.max(0, parseFloat(programFee) - programPaid),
-      total_paid: registrationPaid + programPaid,
-      total_pending: Math.max(0, parseFloat(registrationFee) + parseFloat(programFee) - registrationPaid - programPaid),
-      payments: payments
+      total_paid: totalPaid,
+      total_pending: Math.max(0, totalRequired - totalPaid),
+      total_required: totalRequired,
+      payments: payments || [],
+      is_registration_complete: registrationPaid >= parseFloat(registrationFee),
+      is_program_complete: programPaid >= parseFloat(programFee)
     };
   } catch (error) {
     console.error('Error getting student payment summary:', error);
@@ -277,4 +312,43 @@ export const generateReceiptNumber = () => {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
   return `RCP-${timestamp}-${random}`;
+};
+
+// Get payment analytics
+export const getPaymentAnalytics = async () => {
+  try {
+    const { data: payments, error } = await supabase
+      .from('student_payments')
+      .select(`
+        amount,
+        payment_type,
+        payment_status,
+        created_at,
+        enrollments(
+          programs(name)
+        )
+      `)
+      .eq('payment_status', 'Completed');
+
+    if (error) throw error;
+
+    const totalRevenue = payments.reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0);
+    const registrationRevenue = payments
+      .filter(p => p.payment_type === 'Registration Fee')
+      .reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0);
+    const programRevenue = payments
+      .filter(p => p.payment_type === 'Program Fee')
+      .reduce((sum, payment) => sum + parseFloat(payment.amount || 0), 0);
+
+    return {
+      totalRevenue,
+      registrationRevenue,
+      programRevenue,
+      totalTransactions: payments.length,
+      avgTransactionAmount: payments.length > 0 ? totalRevenue / payments.length : 0
+    };
+  } catch (error) {
+    console.error('Error getting payment analytics:', error);
+    throw error;
+  }
 }; 
