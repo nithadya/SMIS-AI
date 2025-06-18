@@ -7,7 +7,6 @@ import {
   formatCurrency,
   calculateInstallmentAmounts 
 } from '../../lib/api/currency.js';
-import { ALL_PROGRAMS } from '../../constants/programs';
 
 const CurrencySupport = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,6 +17,10 @@ const CurrencySupport = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState(null);
   
+  // Payment plan modal states
+  const [selectedPaymentPlan, setSelectedPaymentPlan] = useState(null);
+  const [showPaymentPlanModal, setShowPaymentPlanModal] = useState(false);
+  
   // Currency calculator states
   const [gbpAmount, setGbpAmount] = useState('');
   const [lkrAmount, setLkrAmount] = useState('');
@@ -26,34 +29,6 @@ const CurrencySupport = () => {
   
   // Student type for fee calculation
   const [studentType, setStudentType] = useState('local'); // 'local' or 'international'
-
-  // Mock data for demonstration - updated with real ICBT programs
-  const currencyData = {
-    baseCurrency: 'USD',
-    exchangeRates: {
-      USD: 1,
-      EUR: 0.92,
-      GBP: 0.79,
-      AUD: 1.52,
-      CAD: 1.35,
-      SGD: 1.34,
-      INR: 82.75,
-      LKR: 320.50
-    },
-    programs: ALL_PROGRAMS.slice(0, 6).map((program, index) => ({
-      id: index + 1,
-      name: program.name,
-      code: program.code,
-      fees: {
-        application: 100,
-        registration: program.level === 'Higher Diploma' ? 400 : 500,
-        tuition: program.level === 'Higher Diploma' ? 12000 : 
-                 program.duration === '4 years' ? 18000 : 15000,
-        total: program.level === 'Higher Diploma' ? 12500 : 
-               program.duration === '4 years' ? 18600 : 15600
-      }
-    }))
-  };
 
   // Load exchange rate on component mount
   useEffect(() => {
@@ -185,6 +160,46 @@ const CurrencySupport = () => {
     });
 
     return { local: localTotal, international: internationalTotal };
+  };
+
+  // Calculate payment breakdown for a plan
+  const calculatePaymentBreakdown = (plan, totalAmount) => {
+    const breakdown = [];
+    let remainingAmount = totalAmount;
+    
+    if (plan.down_payment_required && plan.down_payment_amount > 0) {
+      breakdown.push({
+        type: 'Down Payment',
+        amount: plan.down_payment_amount,
+        dueDate: 'Upon Registration',
+        installmentNumber: 0
+      });
+      remainingAmount -= plan.down_payment_amount;
+    }
+    
+    const monthlyAmount = remainingAmount / plan.total_installments;
+    
+    for (let i = 1; i <= plan.total_installments; i++) {
+      breakdown.push({
+        type: 'Monthly Payment',
+        amount: monthlyAmount,
+        dueDate: `Month ${i}`,
+        installmentNumber: i
+      });
+    }
+    
+    return breakdown;
+  };
+
+  // Handle payment plan selection
+  const handlePaymentPlanClick = (plan) => {
+    setSelectedPaymentPlan(plan);
+    setShowPaymentPlanModal(true);
+  };
+
+  // Print payment plan
+  const printPaymentPlan = () => {
+    window.print();
   };
 
   const renderProgramSearch = () => (
@@ -385,20 +400,33 @@ const CurrencySupport = () => {
             <h5 className="font-medium text-slate-800 mb-3">Available Payment Plans</h5>
             <div className="grid gap-4">
               {installmentPlans.map((plan, index) => (
-                <div key={index} className="border border-slate-200 rounded-lg p-4">
+                <button
+                  key={index}
+                  onClick={() => {
+                    setSelectedPaymentPlan(plan);
+                    setShowPaymentPlanModal(true);
+                  }}
+                  className="border border-slate-200 rounded-lg p-4 text-left hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group w-full"
+                >
                   <div className="flex justify-between items-start mb-2">
                     <h6 className="font-medium text-slate-700">{plan.plan_name}</h6>
-                    <span className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded">
-                      {plan.total_installments} installments
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded">
+                        {plan.total_installments} installments
+                      </span>
+                      <svg className="w-4 h-4 text-blue-500 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
                   <p className="text-sm text-slate-600 mb-2">{plan.description}</p>
                   {plan.down_payment_required && (
-                    <p className="text-sm text-blue-600">
+                    <p className="text-sm text-blue-600 mb-2">
                       Down payment: {formatCurrency(plan.down_payment_amount, studentType === 'international' ? 'GBP' : 'LKR')}
                     </p>
                   )}
-                </div>
+                  <p className="text-xs text-slate-500 group-hover:text-blue-600">Click to view detailed payment breakdown</p>
+                </button>
               ))}
             </div>
           </div>
@@ -484,6 +512,167 @@ const CurrencySupport = () => {
     </div>
   );
 
+  // Payment Plan Modal Component
+  const renderPaymentPlanModal = () => {
+    if (!showPaymentPlanModal || !selectedPaymentPlan) return null;
+
+    const totals = calculateTotalFees();
+    const totalAmount = studentType === 'international' ? totals.international : totals.local;
+    const currency = studentType === 'international' ? 'GBP' : 'LKR';
+    const paymentBreakdown = calculatePaymentBreakdown(selectedPaymentPlan, totalAmount);
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          {/* Modal Header */}
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900">{selectedPaymentPlan.plan_name}</h3>
+              <p className="text-sm text-gray-600">Payment Plan Details</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                🖨️ Print
+              </button>
+              <button
+                onClick={() => setShowPaymentPlanModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                ✕ Close
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Content */}
+          <div className="p-6 print:p-0">
+            {/* Plan Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <div className="bg-blue-50 rounded-lg p-6">
+                <h4 className="font-semibold text-blue-900 mb-4">Plan Overview</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Total Program Cost:</span>
+                    <span className="font-semibold">{formatCurrency(totalAmount, currency)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Number of Installments:</span>
+                    <span className="font-semibold">{selectedPaymentPlan.total_installments}</span>
+                  </div>
+                  {selectedPaymentPlan.down_payment_required && (
+                    <div className="flex justify-between">
+                      <span className="text-blue-700">Down Payment:</span>
+                      <span className="font-semibold">{formatCurrency(selectedPaymentPlan.down_payment_amount, currency)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Monthly Payment:</span>
+                    <span className="font-semibold">
+                      {formatCurrency((totalAmount - (selectedPaymentPlan.down_payment_amount || 0)) / selectedPaymentPlan.total_installments, currency)}
+                    </span>
+                  </div>
+                  {selectedPaymentPlan.interest_rate > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-blue-700">Interest Rate:</span>
+                      <span className="font-semibold">{selectedPaymentPlan.interest_rate}%</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-green-50 rounded-lg p-6">
+                <h4 className="font-semibold text-green-900 mb-4">Program Information</h4>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-green-700 text-sm">Program:</span>
+                    <p className="font-semibold">{selectedProgram?.name}</p>
+                  </div>
+                  <div>
+                    <span className="text-green-700 text-sm">Duration:</span>
+                    <p className="font-semibold">{selectedProgram?.duration || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-green-700 text-sm">Student Type:</span>
+                    <p className="font-semibold capitalize">{studentType} Student</p>
+                  </div>
+                  <div>
+                    <span className="text-green-700 text-sm">Plan Type:</span>
+                    <p className="font-semibold">{selectedPaymentPlan.plan_type}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Schedule Table */}
+            <div className="mb-8">
+              <h4 className="font-semibold text-gray-900 mb-4">Payment Schedule</h4>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border border-gray-200 rounded-lg">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Payment #</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Type</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Due Date</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 border-b">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {paymentBreakdown.map((payment, index) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {payment.installmentNumber === 0 ? 'Initial' : payment.installmentNumber}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{payment.type}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{payment.dueDate}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                          {formatCurrency(payment.amount, currency)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-blue-50">
+                    <tr>
+                      <td colSpan="3" className="px-4 py-3 text-sm font-semibold text-blue-900">
+                        Total Amount
+                      </td>
+                      <td className="px-4 py-3 text-sm font-bold text-blue-900 text-right">
+                        {formatCurrency(totalAmount, currency)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* Additional Information */}
+            <div className="bg-yellow-50 rounded-lg p-6">
+              <h4 className="font-semibold text-yellow-900 mb-3">Important Information</h4>
+              <ul className="space-y-2 text-sm text-yellow-800">
+                <li>• Payments must be made on or before the due dates to avoid late fees</li>
+                {selectedPaymentPlan.late_fee_amount > 0 && (
+                  <li>• Late fee of {formatCurrency(selectedPaymentPlan.late_fee_amount, currency)} applies for overdue payments</li>
+                )}
+                <li>• All fees are non-refundable once the semester begins</li>
+                <li>• Payment confirmation receipts will be provided for each transaction</li>
+                <li>• For payment-related queries, contact the finance department</li>
+              </ul>
+            </div>
+
+            {/* Print-only section */}
+            <div className="hidden print:block mt-8 pt-8 border-t border-gray-200">
+              <div className="text-center">
+                <h3 className="text-lg font-bold">SMIS ICBT - Payment Plan</h3>
+                <p className="text-sm text-gray-600">Generated on {new Date().toLocaleDateString()}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -504,6 +693,9 @@ const CurrencySupport = () => {
         {/* Currency Calculator */}
         {renderCurrencyCalculator()}
       </div>
+
+      {/* Payment Plan Modal */}
+      {renderPaymentPlanModal()}
     </div>
   );
 };
