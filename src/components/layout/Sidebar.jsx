@@ -81,7 +81,7 @@ const Sidebar = ({ isCollapsed }) => {
       title: 'Finance',
       items: [
         { title: 'Payment Management', icon: '💰', path: '/payment-management' },
-        { title: 'Financial Reports', icon: '📊', path: '/financial-reports' },
+        { title: 'Schedules Management', icon: '📊', path: '/schedules' },
       ]
     },
   ];
