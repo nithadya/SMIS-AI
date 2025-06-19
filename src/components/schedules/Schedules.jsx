@@ -559,14 +559,14 @@ const Schedules = () => {
       exit={{ opacity: 0, y: -20 }}
       className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:border-slate-300 transition-colors"
     >
-      <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-4">
         <div className="flex gap-2">
           <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getTypeColor(event.event_type)}`}>
             {event.event_type.replace('_', ' ').toUpperCase()}
-          </span>
-          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(event.status)}`}>
+              </span>
+              <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(event.status)}`}>
             {event.status.toUpperCase()}
-          </span>
+              </span>
         </div>
         
         <div className="flex gap-2">
@@ -603,51 +603,51 @@ const Schedules = () => {
             </>
           )}
         </div>
-      </div>
-      
-      <h4 className="text-lg font-medium text-slate-800 mb-4">{event.title}</h4>
-      
-      <div className="space-y-3 mb-6">
-        <div className="flex items-start gap-2">
-          <span className="text-slate-500 text-sm min-w-[4rem]">Date:</span>
+            </div>
+            
+            <h4 className="text-lg font-medium text-slate-800 mb-4">{event.title}</h4>
+            
+            <div className="space-y-3 mb-6">
+              <div className="flex items-start gap-2">
+                <span className="text-slate-500 text-sm min-w-[4rem]">Date:</span>
           <span className="text-sm text-slate-700">
             {formatDate(event.start_date)}
             {event.end_date && event.end_date !== event.start_date && (
               ` - ${formatDate(event.end_date)}`
             )}
           </span>
-        </div>
-        <div className="flex items-start gap-2">
-          <span className="text-slate-500 text-sm min-w-[4rem]">Time:</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-slate-500 text-sm min-w-[4rem]">Time:</span>
           <span className="text-sm text-slate-700">
             {formatTime(event.start_time)}
             {event.end_time && ` - ${formatTime(event.end_time)}`}
           </span>
-        </div>
-        <div className="flex items-start gap-2">
-          <span className="text-slate-500 text-sm min-w-[4rem]">Location:</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="text-slate-500 text-sm min-w-[4rem]">Location:</span>
           <span className="text-sm text-slate-700">{event.location || 'TBD'}</span>
         </div>
         {event.description && (
           <div className="flex items-start gap-2">
             <span className="text-slate-500 text-sm min-w-[4rem]">Details:</span>
             <span className="text-sm text-slate-700">{event.description}</span>
-          </div>
+              </div>
         )}
-      </div>
+            </div>
 
       {event.capacity && (
-        <div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
-            <div 
-              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+            <div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
+                <div 
+                  className="h-full bg-blue-500 rounded-full transition-all duration-300"
               style={{ width: `${Math.min((event.registered_count || 0) / event.capacity * 100, 100)}%` }}
-            />
-          </div>
-          <span className="text-sm text-slate-600">
+                />
+              </div>
+              <span className="text-sm text-slate-600">
             {event.registered_count || 0}/{event.capacity} Registered
-          </span>
-        </div>
+              </span>
+            </div>
       )}
 
       {/* Show notification stats if any */}
@@ -656,7 +656,7 @@ const Schedules = () => {
           <div className="text-xs text-slate-500">
             Notifications sent: {event.event_notifications.reduce((total, n) => total + (n.sent_count || 0), 0)} students
           </div>
-        </div>
+      </div>
       )}
     </motion.div>
   );
@@ -719,14 +719,14 @@ const Schedules = () => {
               <option value="counselor_students">My Assigned Students</option>
               <option value="all_students">All Active Students</option>
             </select>
-          </div>
+      </div>
 
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-blue-800">
               <strong>Note:</strong> This will send an email notification to students about the event. 
               The notification will include event details, date, time, and location.
             </p>
-          </div>
+              </div>
 
           <div className="flex gap-3 pt-4">
             <button
@@ -746,7 +746,7 @@ const Schedules = () => {
             >
               {loading ? 'Sending...' : 'Send Notification'}
             </button>
-          </div>
+              </div>
         </form>
       </motion.div>
     </motion.div>
@@ -762,7 +762,7 @@ const Schedules = () => {
         </div>
         
         {canManageEvents && (
-          <button
+          <button 
             onClick={() => openEventModal()}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >

@@ -142,8 +142,8 @@ export const updateProgram = async (programId, programData) => {
   }
 };
 
-// Delete program (soft delete by setting status to 'Archived')
-export const deleteProgram = async (programId) => {
+// Archive program (soft delete by setting status to 'Archived')
+export const archiveProgram = async (programId) => {
   try {
     const { data, error } = await supabase
       .from('programs')
@@ -156,14 +156,63 @@ export const deleteProgram = async (programId) => {
       .single();
 
     if (error) {
-      console.error('Error deleting program:', error);
+      console.error('Error archiving program:', error);
       throw error;
     }
 
     return { data, error: null };
   } catch (error) {
-    console.error('Error in deleteProgram:', error);
+    console.error('Error in archiveProgram:', error);
     return { data: null, error: error.message };
+  }
+};
+
+// Delete program (hard delete - permanently removes from database)
+export const deleteProgram = async (programId) => {
+  try {
+    // First delete related data
+    await Promise.all([
+      supabase.from('fee_structure').delete().eq('program_id', programId),
+      supabase.from('international_fee_structure').delete().eq('program_id', programId),
+      supabase.from('program_marketing_materials').delete().eq('program_id', programId),
+      supabase.from('payment_installment_plans').delete().eq('program_id', programId)
+    ]);
+
+    // Then delete the program
+    const { error } = await supabase
+      .from('programs')
+      .delete()
+      .eq('id', programId);
+
+    if (error) {
+      console.error('Error deleting program:', error);
+      throw error;
+    }
+
+    return { error: null };
+  } catch (error) {
+    console.error('Error in deleteProgram:', error);
+    return { error: error.message };
+  }
+};
+
+// Delete multiple programs
+export const deleteMultiplePrograms = async (programIds) => {
+  try {
+    const results = await Promise.all(
+      programIds.map(id => deleteProgram(id))
+    );
+
+    const errors = results.filter(result => result.error).map(result => result.error);
+    
+    if (errors.length > 0) {
+      throw new Error(`Failed to delete some programs: ${errors.join(', ')}`);
+    }
+
+    return { error: null };
+  } catch (error) {
+    console.error('Error in deleteMultiplePrograms:', error);
+    return { error: error.message };
   }
 };
 

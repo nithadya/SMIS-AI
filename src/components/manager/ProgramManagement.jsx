@@ -3,7 +3,9 @@ import {
   getAllPrograms, 
   createProgram, 
   updateProgram, 
+  archiveProgram,
   deleteProgram,
+  deleteMultiplePrograms,
   duplicateProgram,
   getProgramStats,
   getFeeStructure,
@@ -14,12 +16,22 @@ import {
   createMarketingMaterial,
   deleteMarketingMaterial
 } from '../../lib/api/programs';
+import { useAuth } from '../../context/AuthContext';
 import { AnimatedGradientText } from '../ui/AnimatedGradientText';
 import { ShimmerButton } from '../ui/ShimmerButton';
 import { MagicCard } from '../ui/MagicCard';
 import ProgramDetails from './ProgramDetails';
 
 const ProgramManagement = () => {
+  const { user } = useAuth();
+  
+  // Redirect if user is not a manager
+  useEffect(() => {
+    if (user && user.role !== 'manager') {
+      window.location.href = '/programs'; // Redirect to marketing view
+    }
+  }, [user]);
+
   const [programs, setPrograms] = useState([]);
   const [filteredPrograms, setFilteredPrograms] = useState([]);
   const [selectedProgram, setSelectedProgram] = useState(null);
@@ -30,6 +42,10 @@ const ProgramManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
+  const [deletingPrograms, setDeletingPrograms] = useState(new Set());
+  const [archivingPrograms, setArchivingPrograms] = useState(new Set());
+  const [selectedPrograms, setSelectedPrograms] = useState(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
   const [filters, setFilters] = useState({
     category: 'all',
     level: 'all',
@@ -165,12 +181,52 @@ const ProgramManagement = () => {
     }
   };
 
-  const handleDeleteProgram = async (programId) => {
-    if (!confirm('Are you sure you want to archive this program?')) {
+  const handleArchiveProgram = async (programId, programName) => {
+    const confirmMessage = `Are you sure you want to archive the program "${programName}"?\n\nThis will:\n- Set the program status to "Archived"\n- Hide it from active program lists\n- Preserve all historical data\n\nThis action can be reversed by editing the program and changing its status back to "Active".`;
+    
+    if (!confirm(confirmMessage)) {
       return;
     }
 
-    setLoading(true);
+    // Add to archiving set for loading state
+    setArchivingPrograms(prev => new Set(prev).add(programId));
+
+    try {
+      const result = await archiveProgram(programId);
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      await fetchData();
+      if (selectedProgram?.id === programId) {
+        setSelectedProgram(null);
+      }
+      alert(`Program "${programName}" has been archived successfully!\n\nThe program is now hidden from active lists but can be restored by changing its status back to "Active".`);
+    } catch (err) {
+      console.error('Error archiving program:', err);
+      alert('Failed to archive program: ' + err.message);
+    } finally {
+      // Remove from archiving set
+      setArchivingPrograms(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(programId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleDeleteProgram = async (programId, programName) => {
+    const confirmMessage = `⚠️ PERMANENT DELETE WARNING ⚠️\n\nAre you sure you want to PERMANENTLY DELETE the program "${programName}"?\n\nThis will:\n- COMPLETELY remove the program from the database\n- Delete ALL related data (fees, materials, etc.)\n- This action CANNOT be undone\n\nIf you want to hide the program temporarily, use "Archive" instead.\n\nType "DELETE" to confirm permanent deletion:`;
+    
+    const userConfirmation = prompt(confirmMessage);
+    if (userConfirmation !== 'DELETE') {
+      alert('Deletion cancelled. Program was not deleted.');
+      return;
+    }
+
+    // Add to deleting set for loading state
+    setDeletingPrograms(prev => new Set(prev).add(programId));
 
     try {
       const result = await deleteProgram(programId);
@@ -183,12 +239,17 @@ const ProgramManagement = () => {
       if (selectedProgram?.id === programId) {
         setSelectedProgram(null);
       }
-      alert('Program archived successfully!');
+      alert(`Program "${programName}" has been permanently deleted from the database.`);
     } catch (err) {
       console.error('Error deleting program:', err);
-      alert('Failed to archive program: ' + err.message);
+      alert('Failed to delete program: ' + err.message);
     } finally {
-      setLoading(false);
+      // Remove from deleting set
+      setDeletingPrograms(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(programId);
+        return newSet;
+      });
     }
   };
 
@@ -274,6 +335,66 @@ const ProgramManagement = () => {
     }));
   };
 
+  const handleDeleteSelected = async () => {
+    if (selectedPrograms.size === 0) {
+      alert('Please select programs to delete.');
+      return;
+    }
+
+    const programNames = filteredPrograms
+      .filter(p => selectedPrograms.has(p.id))
+      .map(p => p.name)
+      .join(', ');
+
+    const confirmMessage = `⚠️ PERMANENT DELETE WARNING ⚠️\n\nAre you sure you want to PERMANENTLY DELETE ${selectedPrograms.size} selected programs?\n\nPrograms: ${programNames}\n\nThis will:\n- COMPLETELY remove all programs from the database\n- Delete ALL related data (fees, materials, etc.)\n- This action CANNOT be undone\n\nType "DELETE ALL" to confirm permanent deletion:`;
+    
+    const userConfirmation = prompt(confirmMessage);
+    if (userConfirmation !== 'DELETE ALL') {
+      alert('Deletion cancelled. No programs were deleted.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await deleteMultiplePrograms(Array.from(selectedPrograms));
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
+      await fetchData();
+      setSelectedPrograms(new Set());
+      setIsSelectMode(false);
+      alert(`${selectedPrograms.size} programs have been permanently deleted from the database.`);
+    } catch (err) {
+      console.error('Error deleting selected programs:', err);
+      alert('Failed to delete selected programs: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectProgram = (programId) => {
+    setSelectedPrograms(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(programId)) {
+        newSet.delete(programId);
+      } else {
+        newSet.add(programId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedPrograms.size === filteredPrograms.length) {
+      setSelectedPrograms(new Set());
+    } else {
+      setSelectedPrograms(new Set(filteredPrograms.map(p => p.id)));
+    }
+  };
+
   const renderStatsCards = () => {
     if (!stats) return null;
 
@@ -349,25 +470,82 @@ const ProgramManagement = () => {
           </select>
         </div>
 
-        <ShimmerButton
-          onClick={() => setShowCreateForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
-        >
-          + Create Program
-        </ShimmerButton>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setIsSelectMode(!isSelectMode);
+              setSelectedPrograms(new Set());
+            }}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              isSelectMode 
+                ? 'bg-red-500 text-white hover:bg-red-600' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {isSelectMode ? 'Cancel Selection' : 'Select Mode'}
+          </button>
+          
+          {isSelectMode && (
+            <>
+              <button
+                onClick={handleSelectAll}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                {selectedPrograms.size === filteredPrograms.length ? 'Deselect All' : 'Select All'}
+              </button>
+              
+              {selectedPrograms.size > 0 && (
+                <button
+                  onClick={handleDeleteSelected}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  🗑️ Delete Selected ({selectedPrograms.size})
+                </button>
+              )}
+            </>
+          )}
+
+          <ShimmerButton
+            onClick={() => setShowCreateForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+          >
+            + Create Program
+          </ShimmerButton>
+        </div>
       </div>
     </MagicCard>
   );
 
   const renderProgramsGrid = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Programs ({filteredPrograms.length})
+        </h2>
+        {isSelectMode && selectedPrograms.size > 0 && (
+          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+            {selectedPrograms.size} selected
+          </div>
+        )}
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
       {filteredPrograms.map((program) => (
-        <MagicCard key={program.id} className="p-6">
+        <MagicCard key={program.id} className={`p-6 ${selectedPrograms.has(program.id) ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
           <div className="mb-4">
             <div className="flex justify-between items-start mb-2">
-              <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                {program.name}
-              </h3>
+              <div className="flex items-center gap-3">
+                {isSelectMode && (
+                  <input
+                    type="checkbox"
+                    checked={selectedPrograms.has(program.id)}
+                    onChange={() => handleSelectProgram(program.id)}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                )}
+                <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                  {program.name}
+                </h3>
+              </div>
               <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                 program.status === 'Active' ? 'bg-green-100 text-green-800' :
                 program.status === 'Draft' ? 'bg-yellow-100 text-yellow-800' :
@@ -402,37 +580,74 @@ const ProgramManagement = () => {
             </div>
           </div>
 
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => {
-                setSelectedProgram(program);
-                setShowDetails(true);
-              }}
-              className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 transition-colors"
-            >
-              View Details
-            </button>
-            <button
-              onClick={() => handleEditProgram(program)}
-              className="px-3 py-1.5 bg-green-100 text-green-700 rounded-md text-sm hover:bg-green-200 transition-colors"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => handleDuplicateProgram(program.id)}
-              className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-md text-sm hover:bg-purple-200 transition-colors"
-            >
-              Duplicate
-            </button>
-            <button
-              onClick={() => handleDeleteProgram(program.id)}
-              className="px-3 py-1.5 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200 transition-colors"
-            >
-              Archive
-            </button>
-          </div>
+          {!isSelectMode && (
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => {
+                  setSelectedProgram(program);
+                  setShowDetails(true);
+                }}
+                className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 transition-colors"
+              >
+                View Details
+              </button>
+              <button
+                onClick={() => handleEditProgram(program)}
+                className="px-3 py-1.5 bg-green-100 text-green-700 rounded-md text-sm hover:bg-green-200 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDuplicateProgram(program.id)}
+                className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-md text-sm hover:bg-purple-200 transition-colors"
+              >
+                Duplicate
+              </button>
+              <button
+                onClick={() => handleArchiveProgram(program.id, program.name)}
+                disabled={archivingPrograms.has(program.id)}
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors font-medium ${
+                  archivingPrograms.has(program.id)
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-orange-500 text-white hover:bg-orange-600'
+                }`}
+                title={`Archive ${program.name}`}
+              >
+                {archivingPrograms.has(program.id) ? (
+                  <>⏳ Archiving...</>
+                ) : (
+                  <>📦 Archive</>
+                )}
+              </button>
+              <button
+                onClick={() => handleDeleteProgram(program.id, program.name)}
+                disabled={deletingPrograms.has(program.id)}
+                className={`px-3 py-1.5 rounded-md text-sm transition-colors font-medium border ${
+                  deletingPrograms.has(program.id)
+                    ? 'bg-gray-400 text-white border-gray-400 cursor-not-allowed'
+                    : 'bg-red-500 text-white hover:bg-red-600 border-red-600'
+                }`}
+                title={`Permanently Delete ${program.name}`}
+              >
+                {deletingPrograms.has(program.id) ? (
+                  <>⏳ Deleting...</>
+                ) : (
+                  <>🗑️ Delete</>
+                )}
+              </button>
+            </div>
+          )}
+
+          {isSelectMode && (
+            <div className="text-center py-2">
+              <span className="text-sm text-gray-500">
+                {selectedPrograms.has(program.id) ? '✓ Selected' : 'Click checkbox to select'}
+              </span>
+            </div>
+          )}
         </MagicCard>
       ))}
+      </div>
     </div>
   );
 

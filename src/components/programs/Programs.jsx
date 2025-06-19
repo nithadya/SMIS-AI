@@ -231,7 +231,7 @@ const Programs = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {filteredPrograms.map(program => {
             const fees = getProgramFees(program);
             const intakes = program.intakes && program.intakes.length > 0 
@@ -239,47 +239,47 @@ const Programs = () => {
               : ['February', 'July', 'October'];
 
             return (
-              <div 
-                key={program.id}
-                className={`group bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer
-                  ${activeProgram?.id === program.id ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
-                onClick={() => setActiveProgram(program)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && setActiveProgram(program)}
-                aria-label={`View details for ${program.name}`}
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <h3 className="text-lg font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                    {program.name}
-                  </h3>
-                  <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
-                    {program.duration}
-                  </span>
-                </div>
-                <p className="text-slate-600 mb-8 leading-relaxed">{program.description}</p>
-                <div className="grid grid-cols-2 gap-6 mb-8">
-                  <div className="bg-slate-50 rounded-lg p-4 group-hover:bg-blue-50/50 transition-colors">
-                    <span className="block text-sm text-slate-500 mb-1.5">Next Intake</span>
+          <div 
+            key={program.id}
+            className={`group bg-white rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer
+              ${activeProgram?.id === program.id ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+            onClick={() => setActiveProgram(program)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === 'Enter' && setActiveProgram(program)}
+            aria-label={`View details for ${program.name}`}
+          >
+            <div className="flex justify-between items-start mb-6">
+              <h3 className="text-lg font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
+                {program.name}
+              </h3>
+              <span className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-sm font-medium">
+                {program.duration}
+              </span>
+            </div>
+            <p className="text-slate-600 mb-8 leading-relaxed">{program.description}</p>
+            <div className="grid grid-cols-2 gap-6 mb-8">
+              <div className="bg-slate-50 rounded-lg p-4 group-hover:bg-blue-50/50 transition-colors">
+                <span className="block text-sm text-slate-500 mb-1.5">Next Intake</span>
                     <span className="text-base font-medium text-slate-800">{intakes[0]}</span>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg p-4 group-hover:bg-blue-50/50 transition-colors">
-                    <span className="block text-sm text-slate-500 mb-1.5">Local Fee</span>
-                    <span className="text-base font-medium text-slate-800">{fees.local}</span>
-                  </div>
-                </div>
-                <button 
-                  className="w-full px-6 py-3 bg-blue-500 text-white text-sm font-medium rounded-lg 
-                    hover:bg-blue-600 focus:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 
-                    transition-all duration-200 ease-in-out transform hover:-translate-y-0.5"
-                  aria-label={`View detailed information about ${program.name}`}
-                >
-                  View Details
-                </button>
               </div>
+              <div className="bg-slate-50 rounded-lg p-4 group-hover:bg-blue-50/50 transition-colors">
+                <span className="block text-sm text-slate-500 mb-1.5">Local Fee</span>
+                    <span className="text-base font-medium text-slate-800">{fees.local}</span>
+              </div>
+            </div>
+            <button 
+              className="w-full px-6 py-3 bg-blue-500 text-white text-sm font-medium rounded-lg 
+                hover:bg-blue-600 focus:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 
+                transition-all duration-200 ease-in-out transform hover:-translate-y-0.5"
+              aria-label={`View detailed information about ${program.name}`}
+            >
+              View Details
+            </button>
+          </div>
             );
           })}
-        </div>
+      </div>
       )}
     </div>
   );
@@ -357,13 +357,13 @@ const Programs = () => {
           {activeTab === 'details' && (
             <div className="space-y-8">
               {/* Program Overview */}
-              <div>
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">Program Overview</h3>
-                <p className="text-slate-600 leading-relaxed">{activeProgram.description}</p>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Program Overview</h3>
+              <p className="text-slate-600 leading-relaxed">{activeProgram.description}</p>
                 {activeProgram.marketing_description && (
                   <p className="text-slate-600 leading-relaxed mt-4">{activeProgram.marketing_description}</p>
                 )}
-              </div>
+            </div>
 
               {/* Program Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -391,7 +391,7 @@ const Programs = () => {
                       </span>
                     </div>
                   </div>
-                </div>
+                  </div>
 
                 <div className="bg-slate-50 rounded-lg p-6">
                   <h4 className="font-semibold text-slate-800 mb-4">Intake Information</h4>
@@ -400,7 +400,7 @@ const Programs = () => {
                       <div key={index} className="flex items-center justify-between">
                         <span className="text-slate-600">Intake {index + 1}:</span>
                         <span className="text-slate-800 font-medium">{intake}</span>
-                      </div>
+                  </div>
                     ))}
                   </div>
                 </div>
@@ -408,22 +408,22 @@ const Programs = () => {
 
               {/* Eligibility Requirements */}
               {eligibility.length > 0 && (
-                <div>
+              <div>
                   <h4 className="font-semibold text-slate-800 mb-4">Eligibility Requirements</h4>
                   <ul className="space-y-2">
                     {eligibility.map((requirement, index) => (
                       <li key={index} className="flex items-start">
                         <span className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                         <span className="text-slate-600">{requirement}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
               )}
 
               {/* Career Opportunities */}
               {careers.length > 0 && (
-                <div>
+              <div>
                   <h4 className="font-semibold text-slate-800 mb-4">Career Opportunities</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {careers.map((career, index) => (
@@ -431,9 +431,9 @@ const Programs = () => {
                         <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
                         <span className="text-slate-600">{career}</span>
                       </div>
-                    ))}
+                  ))}
                   </div>
-                </div>
+              </div>
               )}
             </div>
           )}
@@ -449,11 +449,11 @@ const Programs = () => {
                         <div>
                           <h4 className="font-semibold text-slate-800">{material.name}</h4>
                           <p className="text-sm text-slate-500 capitalize">{material.type} • {material.size}</p>
-                        </div>
+          </div>
                         <span className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-full capitalize">
                           {material.type}
-                        </span>
-                      </div>
+                    </span>
+                  </div>
                       <div className="flex gap-2">
                         {material.url && material.url !== '#' ? (
                           <a
@@ -461,24 +461,24 @@ const Programs = () => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
-                          >
-                            Download
+                    >
+                      Download
                           </a>
                         ) : (
                           <span className="px-4 py-2 bg-gray-300 text-gray-500 text-sm rounded-lg cursor-not-allowed">
                             Not Available
                           </span>
                         )}
-                        <button
-                          onClick={() => handleSendMaterials(material)}
+                    <button 
+                      onClick={() => handleSendMaterials(material)}
                           className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors"
-                        >
+                    >
                           Send
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    </button>
+                  </div>
                 </div>
+              ))}
+            </div>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-slate-600">No marketing materials available for this program.</p>
@@ -523,8 +523,8 @@ const Programs = () => {
                   </div>
                 </div>
               )}
-            </div>
-          )}
+          </div>
+        )}
         </div>
       </div>
     );
@@ -541,7 +541,7 @@ const Programs = () => {
       </div>
 
       {/* Main Content */}
-      {activeProgram ? renderProgramDetails() : renderProgramList()}
+        {activeProgram ? renderProgramDetails() : renderProgramList()}
     </div>
   );
 };
