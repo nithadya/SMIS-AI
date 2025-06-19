@@ -148,7 +148,7 @@ const InquiryManagement = () => {
         </button>
       </div>
 
-      <InquiryStats inquiries={inquiries} />
+                      <InquiryStats filters={filters} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[250px,1fr] gap-6 mt-6">
         <div className="bg-white rounded-xl p-6 shadow-sm h-fit">
