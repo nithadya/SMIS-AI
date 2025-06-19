@@ -20,6 +20,7 @@ const CounselorPerformance = React.lazy(() => import('../components/counselor/Co
 const InquiryManagement = React.lazy(() => import('../components/inquiry/InquiryManagement'));
 const AdvancedInquiryManagement = React.lazy(() => import('../components/inquiry/AdvancedInquiryManagement'));
 const Programs = React.lazy(() => import('../components/programs/Programs'));
+const ProgramManagement = React.lazy(() => import('../components/manager/ProgramManagement'));
 const Batches = React.lazy(() => import('../components/batches/Batches'));
 const Enrollments = React.lazy(() => import('../components/enrollments/Enrollments'));
 const Registrations = React.lazy(() => import('../components/registrations/Registrations'));
@@ -45,6 +46,7 @@ const AppRoutes = () => {
         <Route path="/inquiry-management/*" element={<InquiryManagement />} />
         <Route path="/advanced-inquiry/*" element={<AdvancedInquiryManagement />} />
         <Route path="/programs/*" element={<Programs />} />
+        <Route path="/programs2/*" element={<ProgramManagement />} />
         <Route path="/batches/*" element={<Batches />} />
         <Route path="/enrollments/*" element={<Enrollments />} />
         <Route path="/registrations/*" element={<Registrations />} />

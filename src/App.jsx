@@ -13,7 +13,7 @@ import CounselorPerformance from './components/counselor/CounselorPerformance';
 import InquiryManagement from './components/inquiry/InquiryManagement';
 import AdvancedInquiryManagement from './components/inquiry/AdvancedInquiryManagement';
 import Programs from './components/programs/Programs';
-import ProgramManagement2 from './components/programs/ProgramManagement2';
+import ProgramManagement from './components/manager/ProgramManagement';
 import Batches from './components/batches/Batches';
 import BatchManagement from './components/manager/BatchManagement';
 import BatchView from './components/marketing/BatchView';
@@ -81,7 +81,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'programs2',
-        element: <ProgramManagement2 />
+        element: <ProgramManagement />
       },
       {
         path: 'enrollments',
