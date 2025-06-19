@@ -1,5 +1,4 @@
 import { supabase } from '../supabase';
-import { getStudentPaymentSummary } from './payments';
 
 const getCurrentUser = () => {
   const user = localStorage.getItem('user');
@@ -12,7 +11,28 @@ export const searchStudentsAdvanced = async (searchTerm, filters = {}) => {
     let query = supabase
       .from('students')
       .select(`
-        *,
+        id,
+        student_id,
+        first_name,
+        last_name,
+        email,
+        phone,
+        date_of_birth,
+        gender,
+        address,
+        city,
+        country,
+        enrollment_id,
+        program_id,
+        batch_id,
+        enrollment_date,
+        academic_status,
+        previous_education,
+        institution,
+        year_completed,
+        grade_results,
+        created_at,
+        updated_at,
         programs:program_id (
           id,
           name,
@@ -890,5 +910,13 @@ export const getStudentStats = async () => {
 
 // Payment summary function - delegates to payments API
 export const getStudentPaymentSummaryByEnrollment = async (enrollmentId) => {
-  return { data: await getStudentPaymentSummary(enrollmentId), error: null };
+  try {
+    // Import here to avoid circular dependency
+    const { getStudentPaymentSummary } = await import('./payments.js');
+    const data = await getStudentPaymentSummary(enrollmentId);
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error in getStudentPaymentSummaryByEnrollment:', error);
+    return { data: null, error: error.message };
+  }
 }; 

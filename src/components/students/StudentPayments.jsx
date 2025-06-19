@@ -24,28 +24,28 @@ const StudentPayments = ({ payments }) => {
           hover:shadow-md transition-all duration-200">
           <h4 className="text-sm font-medium text-slate-500 mb-2">Total Required</h4>
           <p className="text-xl font-semibold text-slate-800">
-            {formatCurrency(payments.totalRequired || 0)}
+            {formatCurrency(payments.total_required || 0)}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 hover:border-green-200 
           hover:shadow-md transition-all duration-200">
           <h4 className="text-sm font-medium text-slate-500 mb-2">Total Paid</h4>
           <p className="text-xl font-semibold text-green-600">
-            {formatCurrency(payments.totalPaid || 0)}
+            {formatCurrency(payments.total_paid || 0)}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 hover:border-amber-200 
           hover:shadow-md transition-all duration-200">
           <h4 className="text-sm font-medium text-slate-500 mb-2">Total Due</h4>
           <p className="text-xl font-semibold text-amber-600">
-            {formatCurrency(payments.totalDue || 0)}
+            {formatCurrency(payments.total_pending || 0)}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-6 hover:border-blue-200 
           hover:shadow-md transition-all duration-200">
           <h4 className="text-sm font-medium text-slate-500 mb-2">Registration Fee</h4>
           <p className="text-sm text-slate-600">
-            {formatCurrency(payments.registrationPaid || 0)} / {formatCurrency(payments.registrationFee || 0)}
+            {formatCurrency(payments.registration_paid || 0)} / {formatCurrency(payments.registration_fee || 0)}
           </p>
         </div>
       </div>

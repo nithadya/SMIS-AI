@@ -187,11 +187,35 @@ export const createBatch = async (batchData) => {
     
     refreshSupabaseAuth();
 
+    // Clean and validate the data before insertion
     const dataToInsert = {
-      ...batchData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      batch_code: batchData.batch_code?.trim(),
+      name: batchData.name?.trim(),
+      program_id: batchData.program_id,
+      start_date: batchData.start_date || null,
+      end_date: batchData.end_date || null,
+      schedule: batchData.schedule?.trim() || null,
+      time_slot: batchData.time_slot?.trim() || null,
+      capacity: parseInt(batchData.capacity) || 40,
+      lecturer: batchData.lecturer?.trim() || null,
+      description: batchData.description?.trim() || null,
+      status: batchData.status || 'Upcoming',
+      enrolled: 0,
+      created_by: user.email || 'manager'
     };
+
+    // Validate required fields
+    if (!dataToInsert.batch_code) {
+      throw new Error('Batch code is required');
+    }
+    if (!dataToInsert.name) {
+      throw new Error('Batch name is required');
+    }
+    if (!dataToInsert.program_id) {
+      throw new Error('Program selection is required');
+    }
+
+    console.log('Creating batch with data:', dataToInsert);
 
     const { data, error } = await supabase
       .from('batches')
@@ -208,14 +232,27 @@ export const createBatch = async (batchData) => {
       .single();
 
     if (error) {
-      console.error('Error creating batch:', error);
-      throw error;
+      console.error('Supabase error creating batch:', error);
+      
+      // Return user-friendly error messages
+      let errorMessage = 'Failed to create batch';
+      if (error.message.includes('duplicate key') || error.message.includes('unique constraint')) {
+        errorMessage = 'Batch code already exists. Please use a different batch code.';
+      } else if (error.message.includes('foreign key')) {
+        errorMessage = 'Selected program is invalid. Please select a valid program.';
+      } else if (error.message.includes('not-null constraint')) {
+        errorMessage = 'All required fields must be filled.';
+      } else if (error.message.includes('violates check constraint')) {
+        errorMessage = 'Invalid data provided. Please check your input values.';
+      }
+      
+      throw new Error(errorMessage);
     }
 
     return { data, error: null };
   } catch (error) {
     console.error('Error in createBatch:', error);
-    return { data: null, error: error.message };
+    return { data: null, error: error.message || 'Failed to create batch' };
   }
 };
 
@@ -328,4 +365,8 @@ export const updateBatchEnrollment = async (batchId, increment = true) => {
     console.error('Error in updateBatchEnrollment:', error);
     return { data: null, error: error.message };
   }
-}; 
+};
+
+
+
+ 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getBatches, 
@@ -9,6 +9,235 @@ import {
 } from '../../lib/api/batches';
 import { showToast } from '../common/Toast';
 import { useAuth } from '../../context/AuthContext';
+
+// Extract BatchModal as a separate component to prevent re-creation on every render
+const BatchModal = ({ 
+  isEdit = false, 
+  formData, 
+  setFormData, 
+  programs, 
+  onSubmit, 
+  onClose, 
+  onReset 
+}) => {
+  const handleInputChange = useCallback((field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, [setFormData]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+          onReset();
+        }
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="card glass max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div className="p-6">
+          <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent mb-6">
+            {isEdit ? 'Edit Batch' : 'Create New Batch'}
+          </h2>
+
+          <form onSubmit={onSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  Batch Code *
+                </label>
+                <input
+                  type="text"
+                  value={formData.batch_code}
+                  onChange={(e) => handleInputChange('batch_code', e.target.value)}
+                  className="input-field"
+                  placeholder="e.g., SE-2024-01"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  Batch Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className="input-field"
+                  placeholder="e.g., Software Engineering Batch 1"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  Program *
+                </label>
+                <select
+                  value={formData.program_id}
+                  onChange={(e) => handleInputChange('program_id', e.target.value)}
+                  className="input-field"
+                  required
+                >
+                  <option value="">Select Program</option>
+                  {programs.map(program => (
+                    <option key={program.id} value={program.id}>
+                      {program.name} ({program.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  Status
+                </label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  className="input-field"
+                >
+                  <option value="Upcoming">Upcoming</option>
+                  <option value="Open">Open</option>
+                  <option value="Full">Full</option>
+                  <option value="Closed">Closed</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  Start Date *
+                </label>
+                <input
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) => handleInputChange('start_date', e.target.value)}
+                  className="input-field"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  End Date *
+                </label>
+                <input
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => handleInputChange('end_date', e.target.value)}
+                  className="input-field"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  Schedule
+                </label>
+                <input
+                  type="text"
+                  value={formData.schedule}
+                  onChange={(e) => handleInputChange('schedule', e.target.value)}
+                  className="input-field"
+                  placeholder="e.g., Mon, Wed, Fri"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  Time Slot
+                </label>
+                <input
+                  type="text"
+                  value={formData.time_slot}
+                  onChange={(e) => handleInputChange('time_slot', e.target.value)}
+                  className="input-field"
+                  placeholder="e.g., 9:00 AM - 12:00 PM"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  Capacity *
+                </label>
+                <input
+                  type="number"
+                  value={formData.capacity}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only update if value is a valid number or empty
+                    if (value === '' || (!isNaN(value) && parseInt(value) > 0)) {
+                      handleInputChange('capacity', value === '' ? '' : parseInt(value));
+                    }
+                  }}
+                  className="input-field"
+                  min="1"
+                  max="100"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                  Lecturer
+                </label>
+                <input
+                  type="text"
+                  value={formData.lecturer}
+                  onChange={(e) => handleInputChange('lecturer', e.target.value)}
+                  className="input-field"
+                  placeholder="Lecturer name"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                className="input-field"
+                rows="3"
+                placeholder="Batch description..."
+              />
+            </div>
+
+            <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onReset();
+                }}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+              >
+                {isEdit ? 'Update Batch' : 'Create Batch'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 const BatchManagement = () => {
   const { user } = useAuth();
@@ -92,15 +321,9 @@ const BatchManagement = () => {
     }
   };
 
-  // Debug render
-  console.log('Rendering BatchManagement:', { 
-    loading, 
-    batchesLength: batches.length, 
-    programsLength: programs.length,
-    batches: batches.slice(0, 2) // Show first 2 batches for debugging
-  });
 
-  const handleCreateBatch = async (e) => {
+
+  const handleCreateBatch = useCallback(async (e) => {
     e.preventDefault();
     try {
       const { data, error } = await createBatch({
@@ -120,9 +343,9 @@ const BatchManagement = () => {
     } catch (error) {
       showToast.error('Failed to create batch');
     }
-  };
+  }, [formData, user, fetchBatches]);
 
-  const handleUpdateBatch = async (e) => {
+  const handleUpdateBatch = useCallback(async (e) => {
     e.preventDefault();
     try {
       const { data, error } = await updateBatch(selectedBatch.id, {
@@ -143,7 +366,7 @@ const BatchManagement = () => {
     } catch (error) {
       showToast.error('Failed to update batch');
     }
-  };
+  }, [formData, user, selectedBatch, fetchBatches]);
 
   const handleDeleteBatch = async (batchId) => {
     if (!window.confirm('Are you sure you want to delete this batch?')) return;
@@ -163,7 +386,7 @@ const BatchManagement = () => {
     }
   };
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       batch_code: '',
       name: '',
@@ -177,7 +400,15 @@ const BatchManagement = () => {
       description: '',
       status: 'Upcoming'
     });
-  };
+  }, [setFormData]);
+
+  const handleCloseCreateModal = useCallback(() => {
+    setShowCreateModal(false);
+  }, []);
+
+  const handleCloseEditModal = useCallback(() => {
+    setShowEditModal(false);
+  }, []);
 
   const openEditModal = (batch) => {
     setSelectedBatch(batch);
@@ -214,224 +445,8 @@ const BatchManagement = () => {
     }
   };
 
-  const BatchModal = ({ isEdit = false }) => (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          isEdit ? setShowEditModal(false) : setShowCreateModal(false);
-          resetForm();
-        }
-      }}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="card glass max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-      >
-        <div className="p-6">
-          <h2 className="text-2xl font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent mb-6">
-            {isEdit ? 'Edit Batch' : 'Create New Batch'}
-          </h2>
-
-          <form onSubmit={isEdit ? handleUpdateBatch : handleCreateBatch} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  Batch Code *
-                </label>
-                <input
-                  type="text"
-                  value={formData.batch_code}
-                  onChange={(e) => setFormData({ ...formData, batch_code: e.target.value })}
-                  className="input-field"
-                  placeholder="e.g., SE-2024-01"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  Batch Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="input-field"
-                  placeholder="e.g., Software Engineering Batch 1"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  Program *
-                </label>
-                <select
-                  value={formData.program_id}
-                  onChange={(e) => setFormData({ ...formData, program_id: e.target.value })}
-                  className="input-field"
-                  required
-                >
-                  <option value="">Select Program</option>
-                  {programs.map(program => (
-                    <option key={program.id} value={program.id}>
-                      {program.name} ({program.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="input-field"
-                >
-                  <option value="Upcoming">Upcoming</option>
-                  <option value="Open">Open</option>
-                  <option value="Full">Full</option>
-                  <option value="Closed">Closed</option>
-                  <option value="Completed">Completed</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  Start Date *
-                </label>
-                <input
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  className="input-field"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  End Date *
-                </label>
-                <input
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                  className="input-field"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  Schedule
-                </label>
-                <input
-                  type="text"
-                  value={formData.schedule}
-                  onChange={(e) => setFormData({ ...formData, schedule: e.target.value })}
-                  className="input-field"
-                  placeholder="e.g., Mon, Wed, Fri"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  Time Slot
-                </label>
-                <input
-                  type="text"
-                  value={formData.time_slot}
-                  onChange={(e) => setFormData({ ...formData, time_slot: e.target.value })}
-                  className="input-field"
-                  placeholder="e.g., 9:00 AM - 12:00 PM"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  Capacity *
-                </label>
-                <input
-                  type="number"
-                  value={formData.capacity}
-                  onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
-                  className="input-field"
-                  min="1"
-                  max="100"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                  Lecturer
-                </label>
-                <input
-                  type="text"
-                  value={formData.lecturer}
-                  onChange={(e) => setFormData({ ...formData, lecturer: e.target.value })}
-                  className="input-field"
-                  placeholder="Lecturer name"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary-700 dark:text-secondary-300 mb-2">
-                Description
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="input-field"
-                rows="3"
-                placeholder="Batch description..."
-              />
-            </div>
-
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => {
-                  isEdit ? setShowEditModal(false) : setShowCreateModal(false);
-                  resetForm();
-                }}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn-primary"
-              >
-                {isEdit ? 'Update Batch' : 'Create Batch'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-
   return (
     <div className="p-6 space-dots">
-      {/* Debug info */}
-      <div className="mb-4 p-4 bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg">
-        <h3 className="font-bold text-yellow-800 dark:text-yellow-200">Debug Info:</h3>
-        <p className="text-yellow-700 dark:text-yellow-300">Loading: {loading.toString()}</p>
-        <p className="text-yellow-700 dark:text-yellow-300">Batches count: {batches.length}</p>
-        <p className="text-yellow-700 dark:text-yellow-300">Programs count: {programs.length}</p>
-        <p className="text-yellow-700 dark:text-yellow-300">User: {user?.email || 'No user'}</p>
-      </div>
 
       <div className="mb-8">
         <div className="flex justify-between items-center mb-4">
@@ -589,8 +604,28 @@ const BatchManagement = () => {
 
       {/* Modals */}
       <AnimatePresence>
-        {showCreateModal && <BatchModal />}
-        {showEditModal && <BatchModal isEdit />}
+        {showCreateModal && (
+          <BatchModal 
+            isEdit={false}
+            formData={formData}
+            setFormData={setFormData}
+            programs={programs}
+            onSubmit={handleCreateBatch}
+            onClose={handleCloseCreateModal}
+            onReset={resetForm}
+          />
+        )}
+        {showEditModal && (
+          <BatchModal 
+            isEdit={true}
+            formData={formData}
+            setFormData={setFormData}
+            programs={programs}
+            onSubmit={handleUpdateBatch}
+            onClose={handleCloseEditModal}
+            onReset={resetForm}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

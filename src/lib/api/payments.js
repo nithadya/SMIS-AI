@@ -46,8 +46,19 @@ export const getStudentPayments = async () => {
     const { data, error } = await supabase
       .from('student_payments')
       .select(`
-        *,
-        enrollments(
+        id,
+        payment_type,
+        amount,
+        payment_method,
+        payment_reference,
+        payment_date,
+        payment_status,
+        description,
+        receipt_number,
+        created_at,
+        updated_at,
+        created_by,
+        enrollments!inner(
           id, 
           student_name, 
           program_id,
@@ -58,7 +69,15 @@ export const getStudentPayments = async () => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Format the data to include student name at top level for easier access
+    const formattedData = (data || []).map(payment => ({
+      ...payment,
+      student_name: payment.enrollments?.student_name || 'Unknown Student',
+      program_name: payment.enrollments?.programs?.name || 'Unknown Program'
+    }));
+
+    return formattedData;
   } catch (error) {
     console.error('Error fetching student payments:', error);
     throw error;
@@ -216,6 +235,12 @@ export const updatePaymentStatus = async (paymentId, status) => {
 // Get payment summary for a student - FIXED VERSION
 export const getStudentPaymentSummary = async (enrollmentId) => {
   try {
+    console.log('Getting payment summary for enrollment ID:', enrollmentId);
+    
+    if (!enrollmentId) {
+      throw new Error('Enrollment ID is required');
+    }
+
     const { data: enrollment, error: enrollmentError } = await supabase
       .from('enrollments')
       .select(`
@@ -227,7 +252,16 @@ export const getStudentPaymentSummary = async (enrollmentId) => {
       .eq('id', enrollmentId)
       .single();
 
-    if (enrollmentError) throw enrollmentError;
+    if (enrollmentError) {
+      console.error('Error fetching enrollment:', enrollmentError);
+      throw enrollmentError;
+    }
+
+    if (!enrollment) {
+      throw new Error('Enrollment not found');
+    }
+
+    console.log('Found enrollment:', enrollment);
 
     // Get fee structure for the program
     const { data: feeStructure, error: feeError } = await supabase
@@ -235,7 +269,10 @@ export const getStudentPaymentSummary = async (enrollmentId) => {
       .select('*')
       .eq('program_id', enrollment.program_id);
 
-    if (feeError) throw feeError;
+    if (feeError) {
+      console.error('Error fetching fee structure:', feeError);
+      throw feeError;
+    }
 
     // Get all payments for this enrollment
     const { data: payments, error: paymentsError } = await supabase
@@ -246,8 +283,11 @@ export const getStudentPaymentSummary = async (enrollmentId) => {
 
     if (paymentsError) throw paymentsError;
 
-    const registrationFee = feeStructure.find(fee => fee.fee_type === 'Registration Fee')?.amount || 50000;
-    const programFee = feeStructure.find(fee => fee.fee_type === 'Program Fee')?.amount || 0;
+    const registrationFeeRecord = feeStructure.find(fee => fee.fee_type === 'Registration Fee');
+    const programFeeRecord = feeStructure.find(fee => fee.fee_type === 'Program Fee');
+    
+    const registrationFee = registrationFeeRecord ? parseFloat(registrationFeeRecord.amount) : 50000;
+    const programFee = programFeeRecord ? parseFloat(programFeeRecord.amount) : 0;
 
     const completedPayments = (payments || []).filter(p => p.payment_status === 'Completed');
     
@@ -260,24 +300,24 @@ export const getStudentPaymentSummary = async (enrollmentId) => {
       .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
     const totalPaid = registrationPaid + programPaid;
-    const totalRequired = parseFloat(registrationFee) + parseFloat(programFee);
+    const totalRequired = registrationFee + programFee;
 
     return {
       enrollment_id: enrollmentId,
       student_name: enrollment.student_name,
       program: enrollment.programs,
-      registration_fee: parseFloat(registrationFee),
-      program_fee: parseFloat(programFee),
+      registration_fee: registrationFee,
+      program_fee: programFee,
       registration_paid: registrationPaid,
       program_paid: programPaid,
-      pending_registration: Math.max(0, parseFloat(registrationFee) - registrationPaid),
-      pending_program: Math.max(0, parseFloat(programFee) - programPaid),
+      pending_registration: Math.max(0, registrationFee - registrationPaid),
+      pending_program: Math.max(0, programFee - programPaid),
       total_paid: totalPaid,
       total_pending: Math.max(0, totalRequired - totalPaid),
       total_required: totalRequired,
       payments: payments || [],
-      is_registration_complete: registrationPaid >= parseFloat(registrationFee),
-      is_program_complete: programPaid >= parseFloat(programFee)
+      is_registration_complete: registrationPaid >= registrationFee,
+      is_program_complete: programPaid >= programFee
     };
   } catch (error) {
     console.error('Error getting student payment summary:', error);
@@ -351,4 +391,6 @@ export const getPaymentAnalytics = async () => {
     console.error('Error getting payment analytics:', error);
     throw error;
   }
-}; 
+};
+
+ 

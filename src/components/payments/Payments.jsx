@@ -78,9 +78,11 @@ const Payments = () => {
       setSearchQuery(`${student.first_name} ${student.last_name}`);
       setShowSearchResults(false);
       
-      // Load student payment data - need to find enrollment_id first
-      // For now, use the student.id as enrollment_id (this might need adjustment based on your data structure)
-      const { data: paymentData } = await getStudentPaymentSummaryByEnrollment(student.id);
+      // Load student payment data - use enrollment_id instead of student.id
+      const enrollmentId = student.enrollment_id || student.id;
+      console.log('Loading payment data for enrollment ID:', enrollmentId);
+      
+      const { data: paymentData } = await getStudentPaymentSummaryByEnrollment(enrollmentId);
       setSelectedStudentPayments(paymentData);
     } catch (error) {
       console.error('Error loading student payment data:', error);
@@ -275,19 +277,19 @@ const Payments = () => {
               <div className="bg-blue-50 rounded-lg p-4">
                 <p className="text-sm text-blue-600 font-medium">Total Required</p>
                 <p className="text-xl font-bold text-blue-800">
-                  {formatCurrency(selectedStudentPayments.totalRequired || 0)}
+                  {formatCurrency(selectedStudentPayments.total_required || 0)}
                 </p>
               </div>
               <div className="bg-green-50 rounded-lg p-4">
                 <p className="text-sm text-green-600 font-medium">Total Paid</p>
                 <p className="text-xl font-bold text-green-800">
-                  {formatCurrency(selectedStudentPayments.totalPaid || 0)}
+                  {formatCurrency(selectedStudentPayments.total_paid || 0)}
                 </p>
               </div>
               <div className="bg-red-50 rounded-lg p-4">
                 <p className="text-sm text-red-600 font-medium">Total Due</p>
                 <p className="text-xl font-bold text-red-800">
-                  {formatCurrency(selectedStudentPayments.totalDue || 0)}
+                  {formatCurrency(selectedStudentPayments.total_pending || 0)}
                 </p>
               </div>
             </div>
@@ -298,10 +300,10 @@ const Payments = () => {
                 <span className="text-sm text-slate-600">Registration Fee:</span>
                 <div className="text-right">
                   <span className={`text-sm font-medium ${
-                    (selectedStudentPayments.registrationPaid || 0) >= (selectedStudentPayments.registrationFee || 0) 
+                    (selectedStudentPayments.registration_paid || 0) >= (selectedStudentPayments.registration_fee || 0) 
                       ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {formatCurrency(selectedStudentPayments.registrationPaid || 0)} / {formatCurrency(selectedStudentPayments.registrationFee || 0)}
+                    {formatCurrency(selectedStudentPayments.registration_paid || 0)} / {formatCurrency(selectedStudentPayments.registration_fee || 0)}
                   </span>
                 </div>
               </div>
@@ -309,10 +311,10 @@ const Payments = () => {
                 <span className="text-sm text-slate-600">Program Fee:</span>
                 <div className="text-right">
                   <span className={`text-sm font-medium ${
-                    (selectedStudentPayments.programPaid || 0) >= (selectedStudentPayments.programFee || 0) 
+                    (selectedStudentPayments.program_paid || 0) >= (selectedStudentPayments.program_fee || 0) 
                       ? 'text-green-600' : 'text-red-600'
                   }`}>
-                    {formatCurrency(selectedStudentPayments.programPaid || 0)} / {formatCurrency(selectedStudentPayments.programFee || 0)}
+                    {formatCurrency(selectedStudentPayments.program_paid || 0)} / {formatCurrency(selectedStudentPayments.program_fee || 0)}
                   </span>
                 </div>
               </div>

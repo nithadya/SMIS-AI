@@ -201,6 +201,32 @@ const StudentManagement = () => {
     }).format(amount || 0);
   };
 
+  const handleViewDocument = (doc) => {
+    if (doc.file_path) {
+      // Create a modal or open document in new tab
+      window.open(doc.file_path, '_blank');
+      showToast.success('Document opened in new tab');
+    } else {
+      showToast.error('Document file not found');
+    }
+  };
+
+  const handleDownloadDocument = (doc) => {
+    if (doc.file_path) {
+      // In a real implementation, this would download from cloud storage
+      const link = document.createElement('a');
+      link.href = doc.file_path;
+      link.download = doc.document_name;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast.success('Document download started');
+    } else {
+      showToast.error('Document file not found');
+    }
+  };
+
   const StudentModal = () => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -394,9 +420,20 @@ const StudentManagement = () => {
                             Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
                           </p>
                         </div>
-                        <button className="text-primary-500 hover:text-primary-600 text-sm">
-                          View
-                        </button>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleViewDocument(doc)}
+                            className="text-primary-500 hover:text-primary-600 text-sm font-medium hover:underline"
+                          >
+                            View
+                          </button>
+                          <button 
+                            onClick={() => handleDownloadDocument(doc)}
+                            className="text-secondary-500 hover:text-secondary-600 text-sm font-medium hover:underline"
+                          >
+                            Download
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
