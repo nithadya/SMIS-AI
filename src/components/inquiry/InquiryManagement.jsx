@@ -26,6 +26,10 @@ const InquiryManagement = () => {
     dateRange: 'all'
   });
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
   const fetchInquiries = async () => {
     setLoading(true);
     try {
@@ -52,6 +56,11 @@ const InquiryManagement = () => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
 
   const handleInquirySelect = (inquiry) => {
@@ -195,6 +204,9 @@ const InquiryManagement = () => {
                   inquiries={inquiries}
                   onSelect={handleInquirySelect}
                   filters={filters}
+                  currentPage={currentPage}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
                 />
               )}
               {activeTab === 'details' && selectedInquiry && (

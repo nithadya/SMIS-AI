@@ -14,6 +14,7 @@ import {
 import { getPrograms } from '../../lib/api/batches';
 import { showToast } from '../common/Toast';
 import { useAuth } from '../../context/AuthContext';
+import Pagination from '../common/Pagination';
 
 const StudentManagement = () => {
   const { user } = useAuth();
@@ -36,6 +37,14 @@ const StudentManagement = () => {
     status: 'all',
     dateRange: 'all'
   });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   const [paymentForm, setPaymentForm] = useState({
     payment_type: 'Tuition',
@@ -794,7 +803,16 @@ const StudentManagement = () => {
                   </td>
                 </tr>
               ) : (
-                students.map(student => (
+                (() => {
+                  // Calculate pagination
+                  const filteredStudents = students;
+                  const totalItems = filteredStudents.length;
+                  const totalPages = Math.ceil(totalItems / itemsPerPage);
+                  const startIndex = (currentPage - 1) * itemsPerPage;
+                  const endIndex = startIndex + itemsPerPage;
+                  const currentStudents = filteredStudents.slice(startIndex, endIndex);
+                  
+                  return currentStudents.map(student => (
                   <motion.tr 
                     key={student.id}
                     whileHover={{ backgroundColor: 'rgba(99, 102, 241, 0.05)' }}
@@ -840,11 +858,24 @@ const StudentManagement = () => {
                       </button>
                     </td>
                   </motion.tr>
-                ))
+                  ));
+                })()
               )}
             </tbody>
           </table>
         </div>
+        
+        {/* Add pagination for students table */}
+        {students.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(students.length / itemsPerPage)}
+            totalItems={students.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            showInfo={true}
+          />
+        )}
       </div>
 
       {/* Modals */}

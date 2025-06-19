@@ -13,6 +13,7 @@ import EnrollmentFilters from './EnrollmentFilters';
 import EnrollmentStats from './EnrollmentStats';
 import EnrollmentStepDetails from './EnrollmentStepDetails';
 import { refreshSupabaseAuth } from '../../lib/supabase';
+import Pagination from '../common/Pagination';
 
 const Enrollments = () => {
   const navigate = useNavigate();
@@ -30,6 +31,10 @@ const Enrollments = () => {
   const [addingNote, setAddingNote] = useState(false);
   const [navigatingStep, setNavigatingStep] = useState(false);
   const [selectedStep, setSelectedStep] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Fetch enrollments on component mount and when filters change
   useEffect(() => {
@@ -252,6 +257,11 @@ const Enrollments = () => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
 
   const handleSelectStep = (step) => {
@@ -397,9 +407,17 @@ const Enrollments = () => {
       );
     }
 
+    // Calculate pagination
+    const totalItems = enrollments.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentEnrollments = enrollments.slice(startIndex, endIndex);
+
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {enrollments.map(enrollment => (
+      <div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {currentEnrollments.map(enrollment => (
           <div 
             key={enrollment.id}
             className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -464,6 +482,16 @@ const Enrollments = () => {
             )}
           </div>
         ))}
+        </div>
+        
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          showInfo={true}
+        />
       </div>
     );
   };

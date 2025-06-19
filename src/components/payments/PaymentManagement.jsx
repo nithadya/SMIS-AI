@@ -11,6 +11,7 @@ import {
 } from '../../lib/api/payments';
 import { searchStudents, getStudentPaymentSummaryByEnrollment } from '../../lib/api/students';
 import { Toast } from '../common/Toast';
+import Pagination from '../common/Pagination';
 
 const PaymentManagement = () => {
   const [activeTab, setActiveTab] = useState('pending');
@@ -40,6 +41,11 @@ const PaymentManagement = () => {
     description: ''
   });
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Pagination states
+  const [currentPagePending, setCurrentPagePending] = useState(1);
+  const [currentPagePayments, setCurrentPagePayments] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     loadPaymentData();
@@ -98,6 +104,14 @@ const PaymentManagement = () => {
     setSelectedStudent(null);
     setSelectedStudentPayments(null);
     setShowSearchResults(false);
+  };
+
+  const handlePageChangePending = (page) => {
+    setCurrentPagePending(page);
+  };
+
+  const handlePageChangePayments = (page) => {
+    setCurrentPagePayments(page);
   };
 
   const loadPaymentData = async () => {
@@ -471,8 +485,9 @@ const PaymentManagement = () => {
           <p className="text-sm text-slate-400 mt-1">All students have completed their payments</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {pendingPayments.map(payment => (
+        <div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {pendingPayments.slice((currentPagePending - 1) * itemsPerPage, currentPagePending * itemsPerPage).map(payment => (
             <div 
               key={payment.id} 
               className="group border border-slate-200 rounded-xl p-6 hover:border-blue-200 
@@ -550,6 +565,16 @@ const PaymentManagement = () => {
               </div>
             </div>
           ))}
+          </div>
+          
+          <Pagination
+            currentPage={currentPagePending}
+            totalPages={Math.ceil(pendingPayments.length / itemsPerPage)}
+            totalItems={pendingPayments.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChangePending}
+            showInfo={true}
+          />
         </div>
       )}
     </div>
@@ -593,7 +618,7 @@ const PaymentManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {studentPayments.slice(0, 10).map((transaction) => (
+              {studentPayments.slice((currentPagePayments - 1) * itemsPerPage, currentPagePayments * itemsPerPage).map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-slate-800">
@@ -624,6 +649,15 @@ const PaymentManagement = () => {
               ))}
             </tbody>
           </table>
+          
+          <Pagination
+            currentPage={currentPagePayments}
+            totalPages={Math.ceil(studentPayments.length / itemsPerPage)}
+            totalItems={studentPayments.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChangePayments}
+            showInfo={true}
+          />
         </div>
       )}
     </div>
