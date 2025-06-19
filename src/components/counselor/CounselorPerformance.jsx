@@ -1,390 +1,637 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MagicCard, AnimatedList, ScrollProgress } from '../ui';
+import { useAuth } from '../../context/AuthContext';
+import { MagicCard } from '../ui/MagicCard';
+import { AnimatedGradientText } from '../ui/AnimatedGradientText';
+import { ShimmerButton } from '../ui/ShimmerButton';
+import {
+  getPerformanceDashboard,
+  getCounselorDetails,
+  getAllCounselors,
+  createInteraction,
+  updateAssignment,
+  transferAssignment,
+  autoAssignInquiry,
+  calculatePerformanceMetrics,
+  getCounselorComparison
+} from '../../lib/api/counselors';
 
 const CounselorPerformance = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
-  const [selectedCounselor, setSelectedCounselor] = useState('all');
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [selectedPeriod, setSelectedPeriod] = useState('monthly');
+  const [selectedCounselor, setSelectedCounselor] = useState(null);
+  
+  // Data states
+  const [dashboardData, setDashboardData] = useState(null);
+  const [counselors, setCounselors] = useState([]);
+  const [counselorDetails, setCounselorDetails] = useState(null);
+  const [comparisonData, setComparisonData] = useState([]);
+  
+  // Modal states
+  const [showInteractionModal, setShowInteractionModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
 
-  // Mock data for demonstration
-  const counselorData = {
-    overview: {
-      totalCounselors: 25,
-      activeCounselors: 22,
-      totalAssignments: 892,
-      averageRating: 4.6
-    },
-    counselors: [
-      {
-        id: 1,
-        name: 'Sarah Wilson',
-        role: 'Senior Marketing Counselor',
-        activeStudents: 45,
-        conversionRate: 68,
-        rating: 4.8,
-        performance: {
-          inquiriesHandled: 156,
-          conversions: 89,
-          followUps: 234,
-          avgResponseTime: '2h 15m'
-        }
-      },
-      {
-        id: 2,
-        name: 'Michael Chen',
-        role: 'Marketing Counselor',
-        activeStudents: 38,
-        conversionRate: 62,
-        rating: 4.5,
-        performance: {
-          inquiriesHandled: 142,
-          conversions: 72,
-          followUps: 198,
-          avgResponseTime: '1h 45m'
-        }
-      },
-      {
-        id: 3,
-        name: 'Emma Thompson',
-        role: 'Senior Marketing Counselor',
-        activeStudents: 42,
-        conversionRate: 71,
-        rating: 4.7,
-        performance: {
-          inquiriesHandled: 168,
-          conversions: 94,
-          followUps: 256,
-          avgResponseTime: '1h 55m'
-        }
+  // Redirect if user is not a manager
+  useEffect(() => {
+    if (user && user.role !== 'manager') {
+      window.location.href = '/dashboard';
+      return;
+    }
+  }, [user]);
+
+  // Load initial data
+  useEffect(() => {
+    if (user?.role === 'manager') {
+      fetchDashboardData();
+      fetchCounselors();
+    }
+  }, [user, selectedPeriod]);
+
+  // Load counselor details when selected
+  useEffect(() => {
+    if (selectedCounselor) {
+      fetchCounselorDetails(selectedCounselor);
+    }
+  }, [selectedCounselor]);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [dashboardResult, comparisonResult] = await Promise.all([
+        getPerformanceDashboard(selectedPeriod),
+        getCounselorComparison(selectedPeriod)
+      ]);
+
+      if (dashboardResult.error) {
+        throw new Error(dashboardResult.error);
       }
-    ],
-    performanceMetrics: {
-      averageConversionRate: 65,
-      averageResponseTime: '2h',
-      averageFollowUps: 215,
-      studentSatisfaction: 92
-    },
-    recentInteractions: [
-      {
-        id: 1,
-        counselor: 'Sarah Wilson',
-        student: 'John Doe',
-        type: 'Initial Consultation',
-        outcome: 'Program Enrollment',
-        rating: 5,
-        date: '2024-03-15T10:30:00'
-      },
-      {
-        id: 2,
-        counselor: 'Michael Chen',
-        student: 'Alice Brown',
-        type: 'Follow-up Meeting',
-        outcome: 'Information Provided',
-        rating: 4,
-        date: '2024-03-15T11:45:00'
-      },
-      {
-        id: 3,
-        counselor: 'Emma Thompson',
-        student: 'David Lee',
-        type: 'Program Guidance',
-        outcome: 'Application Started',
-        rating: 5,
-        date: '2024-03-15T14:20:00'
+      if (comparisonResult.error) {
+        throw new Error(comparisonResult.error);
       }
-    ],
-    insights: [
-      {
-        id: 1,
-        type: 'Performance',
-        insight: 'Counselors with follow-up intervals under 48 hours show 25% higher conversion rates',
-        recommendation: 'Implement automated follow-up reminders for all counselors',
-        impact: 'High'
-      },
-      {
-        id: 2,
-        type: 'Workload',
-        insight: 'Current student-to-counselor ratio is approaching optimal threshold',
-        recommendation: 'Consider hiring 2 additional counselors for next quarter',
-        impact: 'Medium'
-      },
-      {
-        id: 3,
-        type: 'Quality',
-        insight: 'Video consultations receive 15% higher satisfaction ratings',
-        recommendation: 'Encourage more video-based counseling sessions',
-        impact: 'High'
+
+      setDashboardData(dashboardResult.data);
+      setComparisonData(comparisonResult.data || []);
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCounselors = async () => {
+    try {
+      const result = await getAllCounselors();
+      if (result.error) {
+        throw new Error(result.error);
       }
-    ]
+      setCounselors(result.data || []);
+    } catch (err) {
+      console.error('Error fetching counselors:', err);
+      setError(err.message);
+    }
+  };
+
+  const fetchCounselorDetails = async (counselorId) => {
+    try {
+      setLoading(true);
+      const result = await getCounselorDetails(counselorId);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      setCounselorDetails(result.data);
+    } catch (err) {
+      console.error('Error fetching counselor details:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRecalculateMetrics = async (counselorId) => {
+    try {
+      const result = await calculatePerformanceMetrics(counselorId, selectedPeriod);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      // Refresh data
+      await fetchDashboardData();
+      if (selectedCounselor === counselorId) {
+        await fetchCounselorDetails(counselorId);
+      }
+      
+      alert('Performance metrics recalculated successfully!');
+    } catch (err) {
+      console.error('Error recalculating metrics:', err);
+      alert('Failed to recalculate metrics: ' + err.message);
+    }
   };
 
   const renderHeader = () => (
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
       <div>
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
-          Counselor Performance
-        </h1>
-        <p className="text-secondary-600 dark:text-secondary-400">
+        <AnimatedGradientText className="text-3xl font-bold mb-2">
+          Counselor Performance Management
+        </AnimatedGradientText>
+        <p className="text-gray-600 dark:text-gray-400">
           Monitor and optimize counselor effectiveness and student interactions
         </p>
       </div>
+      
       <div className="flex flex-col sm:flex-row gap-3">
         <select
           value={selectedPeriod}
           onChange={(e) => setSelectedPeriod(e.target.value)}
-          className="px-4 py-2 rounded-lg glass text-secondary-700 dark:text-secondary-300"
+          className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500"
         >
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
-          <option value="quarter">This Quarter</option>
-          <option value="year">This Year</option>
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="quarterly">Quarterly</option>
         </select>
-        <select
-          value={selectedCounselor}
-          onChange={(e) => setSelectedCounselor(e.target.value)}
-          className="px-4 py-2 rounded-lg glass text-secondary-700 dark:text-secondary-300"
+
+        <ShimmerButton
+          onClick={() => fetchDashboardData()}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
         >
-          <option value="all">All Counselors</option>
-          {counselorData.counselors.map(counselor => (
-            <option key={counselor.id} value={counselor.id}>
-              {counselor.name}
-            </option>
-          ))}
-        </select>
+          🔄 Refresh
+        </ShimmerButton>
       </div>
     </div>
   );
 
-  const renderOverviewCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-      <MagicCard className="p-6">
-        <h3 className="text-lg font-semibold text-secondary-700 dark:text-secondary-300 mb-4">
-          Team Overview
-        </h3>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-secondary-600 dark:text-secondary-400">Total Counselors</span>
-            <span className="text-2xl font-semibold text-primary-500">{counselorData.overview.totalCounselors}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-secondary-600 dark:text-secondary-400">Active Counselors</span>
-            <span className="text-2xl font-semibold text-success-main">{counselorData.overview.activeCounselors}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-secondary-600 dark:text-secondary-400">Total Assignments</span>
-            <span className="text-2xl font-semibold text-info-main">{counselorData.overview.totalAssignments}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-secondary-600 dark:text-secondary-400">Average Rating</span>
-            <span className="text-2xl font-semibold text-warning-main">{counselorData.overview.averageRating} ⭐</span>
-          </div>
-        </div>
-      </MagicCard>
+  const renderTabNavigation = () => (
+    <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+      {[
+        { id: 'overview', label: 'Overview', icon: '📊' },
+        { id: 'performance', label: 'Performance', icon: '📈' },
+        { id: 'workload', label: 'Workload', icon: '⚖️' },
+        { id: 'interactions', label: 'Interactions', icon: '💬' },
+        { id: 'comparison', label: 'Comparison', icon: '📋' }
+      ].map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-lg transition-colors ${
+            activeTab === tab.id
+              ? 'bg-blue-100 text-blue-700 border-b-2 border-blue-500'
+              : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+          }`}
+        >
+          <span>{tab.icon}</span>
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
 
-      <MagicCard className="p-6">
-        <h3 className="text-lg font-semibold text-secondary-700 dark:text-secondary-300 mb-4">
-          Performance Metrics
-        </h3>
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-secondary-600 dark:text-secondary-400">Conversion Rate</span>
-            <span className="text-2xl font-semibold text-success-main">{counselorData.performanceMetrics.averageConversionRate}%</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-secondary-600 dark:text-secondary-400">Response Time</span>
-            <span className="text-2xl font-semibold text-primary-500">{counselorData.performanceMetrics.averageResponseTime}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-secondary-600 dark:text-secondary-400">Avg Follow-ups</span>
-            <span className="text-2xl font-semibold text-info-main">{counselorData.performanceMetrics.averageFollowUps}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-secondary-600 dark:text-secondary-400">Satisfaction</span>
-            <span className="text-2xl font-semibold text-warning-main">{counselorData.performanceMetrics.studentSatisfaction}%</span>
-          </div>
-        </div>
-      </MagicCard>
+  const renderOverviewCards = () => {
+    if (!dashboardData?.statistics) return null;
 
-      <MagicCard className="p-6 lg:col-span-2">
-        <h3 className="text-lg font-semibold text-secondary-700 dark:text-secondary-300 mb-4">
-          Top Performing Counselors
-        </h3>
-        <div className="space-y-4">
-          {counselorData.counselors.map((counselor) => (
-            <motion.div
-              key={counselor.id}
-              className="glass p-4 rounded-xl"
-              whileHover={{ scale: 1.02 }}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-secondary-700 dark:text-secondary-300">
-                    {counselor.name}
-                  </h4>
-                  <p className="text-sm text-secondary-600 dark:text-secondary-400">
-                    {counselor.role}
-                  </p>
+    const stats = dashboardData.statistics;
+    
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <MagicCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Total Counselors</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.totalCounselors}</p>
+            </div>
+            <div className="text-3xl">👥</div>
+          </div>
+          <p className="text-xs text-green-600 mt-2">
+            {stats.activeCounselors} active this week
+          </p>
+        </MagicCard>
+
+        <MagicCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Conversion Rate</p>
+              <p className="text-2xl font-bold text-green-600">{stats.avgConversionRate}%</p>
+            </div>
+            <div className="text-3xl">📈</div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            {stats.totalConversionsThisMonth} conversions this month
+          </p>
+        </MagicCard>
+
+        <MagicCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Satisfaction</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.avgSatisfaction}/5</p>
+            </div>
+            <div className="text-3xl">⭐</div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">Based on student feedback</p>
+        </MagicCard>
+
+        <MagicCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly Interactions</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.totalInteractionsThisMonth}</p>
+            </div>
+            <div className="text-3xl">💬</div>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">All counselor interactions</p>
+        </MagicCard>
+      </div>
+    );
+  };
+
+  const renderCounselorGrid = () => {
+    const teamData = dashboardData?.teamOverview || [];
+    
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {teamData.map((counselor) => (
+          <MagicCard 
+            key={counselor.counselor_id} 
+            className="p-6 cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => setSelectedCounselor(counselor.counselor_id)}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                  {counselor.counselor_name}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {counselor.counselor_email}
+                </p>
+              </div>
+              <div className="text-2xl">👤</div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Conversion Rate</span>
+                <span className={`text-sm font-semibold ${
+                  counselor.conversion_rate_percentage >= 70 ? 'text-green-600' :
+                  counselor.conversion_rate_percentage >= 50 ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                  {counselor.conversion_rate_percentage || 0}%
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Interactions (Month)</span>
+                <span className="text-sm font-semibold text-blue-600">
+                  {counselor.interactions_this_month || 0}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Satisfaction</span>
+                <span className="text-sm font-semibold text-yellow-600">
+                  {counselor.overall_avg_satisfaction ? `${counselor.overall_avg_satisfaction}/5` : 'N/A'}
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-600">Last Activity</span>
+                <span className="text-xs text-gray-500">
+                  {counselor.last_interaction_date 
+                    ? new Date(counselor.last_interaction_date).toLocaleDateString()
+                    : 'No recent activity'
+                  }
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRecalculateMetrics(counselor.counselor_id);
+                  }}
+                  className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-md text-sm hover:bg-blue-200 transition-colors"
+                >
+                  📊 Recalculate
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedCounselor(counselor.counselor_id);
+                    setActiveTab('performance');
+                  }}
+                  className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-md text-sm hover:bg-green-200 transition-colors"
+                >
+                  📈 Details
+                </button>
+              </div>
+            </div>
+          </MagicCard>
+        ))}
+      </div>
+    );
+  };
+
+  const renderPerformanceTab = () => {
+    if (!selectedCounselor || !counselorDetails) {
+      return (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">👤</div>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">Select a Counselor</h3>
+          <p className="text-gray-500">Choose a counselor from the overview to view detailed performance metrics</p>
+        </div>
+      );
+    }
+
+    const { counselor, assignments, interactions, metrics } = counselorDetails;
+    const latestMetric = metrics?.[0];
+
+    return (
+      <div className="space-y-6">
+        {/* Counselor Header */}
+        <MagicCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                {counselor.full_name.charAt(0)}
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+                  {counselor.full_name}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">{counselor.email}</p>
+                <p className="text-sm text-gray-500">
+                  Joined: {new Date(counselor.created_at).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              {latestMetric && (
+                <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                  latestMetric.efficiency_rating === 'excellent' ? 'bg-green-100 text-green-800' :
+                  latestMetric.efficiency_rating === 'good' ? 'bg-blue-100 text-blue-800' :
+                  latestMetric.efficiency_rating === 'average' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {latestMetric.efficiency_rating?.toUpperCase()} ({latestMetric.performance_score.toFixed(1)})
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-secondary-600 dark:text-secondary-400">
-                    Conversion Rate
-                  </p>
-                  <p className="text-lg font-semibold text-success-main">
-                    {counselor.conversionRate}%
-                  </p>
+              )}
+            </div>
+          </div>
+        </MagicCard>
+
+        {/* Performance Metrics */}
+        {latestMetric && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <MagicCard className="p-4">
+              <div className="text-center">
+                <div className="text-2xl mb-2">📋</div>
+                <div className="text-2xl font-bold text-blue-600">{latestMetric.total_assignments}</div>
+                <div className="text-sm text-gray-600">Total Assignments</div>
+                <div className="text-xs text-green-600 mt-1">
+                  {latestMetric.active_assignments} active
                 </div>
               </div>
-            </motion.div>
-          ))}
+            </MagicCard>
+
+            <MagicCard className="p-4">
+              <div className="text-center">
+                <div className="text-2xl mb-2">📈</div>
+                <div className="text-2xl font-bold text-green-600">{latestMetric.conversion_rate.toFixed(1)}%</div>
+                <div className="text-sm text-gray-600">Conversion Rate</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {latestMetric.inquiries_converted}/{latestMetric.total_inquiries_handled} converted
+                </div>
+              </div>
+            </MagicCard>
+
+            <MagicCard className="p-4">
+              <div className="text-center">
+                <div className="text-2xl mb-2">⭐</div>
+                <div className="text-2xl font-bold text-yellow-600">
+                  {latestMetric.average_satisfaction_rating.toFixed(1)}/5
+                </div>
+                <div className="text-sm text-gray-600">Avg Satisfaction</div>
+              </div>
+            </MagicCard>
+
+            <MagicCard className="p-4">
+              <div className="text-center">
+                <div className="text-2xl mb-2">⏱️</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {latestMetric.average_interaction_duration_minutes.toFixed(0)}m
+                </div>
+                <div className="text-sm text-gray-600">Avg Duration</div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {latestMetric.total_interactions} interactions
+                </div>
+              </div>
+            </MagicCard>
+          </div>
+        )}
+
+        {/* Recent Assignments */}
+        <MagicCard className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Recent Assignments</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="text-left py-2">Inquiry</th>
+                  <th className="text-left py-2">Status</th>
+                  <th className="text-left py-2">Priority</th>
+                  <th className="text-left py-2">Assigned Date</th>
+                  <th className="text-left py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assignments?.slice(0, 10).map((assignment) => (
+                  <tr key={assignment.id} className="border-b border-gray-100 dark:border-gray-800">
+                    <td className="py-2">
+                      <div>
+                        <div className="font-medium">{assignment.inquiries?.name}</div>
+                        <div className="text-xs text-gray-500">{assignment.inquiries?.email}</div>
+                      </div>
+                    </td>
+                    <td className="py-2">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        assignment.status === 'active' ? 'bg-green-100 text-green-800' :
+                        assignment.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {assignment.status}
+                      </span>
+                    </td>
+                    <td className="py-2">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        assignment.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                        assignment.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                        assignment.priority === 'normal' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {assignment.priority}
+                      </span>
+                    </td>
+                    <td className="py-2 text-gray-600">
+                      {new Date(assignment.assigned_date).toLocaleDateString()}
+                    </td>
+                    <td className="py-2">
+                      <button className="text-blue-600 hover:text-blue-800 text-xs">
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </MagicCard>
+      </div>
+    );
+  };
+
+  const renderComparisonTab = () => (
+    <div className="space-y-6">
+      <MagicCard className="p-6">
+        <h3 className="text-lg font-semibold mb-4">Counselor Performance Comparison</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left py-3">Counselor</th>
+                <th className="text-center py-3">Performance Score</th>
+                <th className="text-center py-3">Conversion Rate</th>
+                <th className="text-center py-3">Assignments</th>
+                <th className="text-center py-3">Satisfaction</th>
+                <th className="text-center py-3">Efficiency</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparisonData.map((metric, index) => (
+                <tr key={metric.counselor_id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800">
+                  <td className="py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                        {metric.users?.full_name?.charAt(0) || '#'}
+                      </div>
+                      <div>
+                        <div className="font-medium">{metric.users?.full_name}</div>
+                        <div className="text-xs text-gray-500">{metric.users?.email}</div>
+                      </div>
+                      {index < 3 && (
+                        <div className="text-lg">
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3 text-center">
+                    <div className="text-lg font-bold text-blue-600">
+                      {metric.performance_score.toFixed(1)}
+                    </div>
+                  </td>
+                  <td className="py-3 text-center">
+                    <div className={`text-lg font-bold ${
+                      metric.conversion_rate >= 70 ? 'text-green-600' :
+                      metric.conversion_rate >= 50 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {metric.conversion_rate.toFixed(1)}%
+                    </div>
+                  </td>
+                  <td className="py-3 text-center">
+                    <div className="text-gray-600">
+                      {metric.total_assignments}
+                      <div className="text-xs text-green-600">
+                        {metric.active_assignments} active
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 text-center">
+                    <div className="text-yellow-600 font-bold">
+                      {metric.average_satisfaction_rating.toFixed(1)}/5
+                    </div>
+                  </td>
+                  <td className="py-3 text-center">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      metric.efficiency_rating === 'excellent' ? 'bg-green-100 text-green-800' :
+                      metric.efficiency_rating === 'good' ? 'bg-blue-100 text-blue-800' :
+                      metric.efficiency_rating === 'average' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {metric.efficiency_rating}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </MagicCard>
     </div>
   );
 
-  const renderCounselorDetails = () => (
-    <MagicCard className="p-6 mb-6">
-      <h3 className="text-lg font-semibold text-secondary-700 dark:text-secondary-300 mb-4">
-        Counselor Performance Details
-      </h3>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-secondary-200 dark:border-secondary-700">
-              <th className="text-left py-3 px-4">Counselor</th>
-              <th className="text-left py-3 px-4">Active Students</th>
-              <th className="text-left py-3 px-4">Inquiries</th>
-              <th className="text-left py-3 px-4">Conversions</th>
-              <th className="text-left py-3 px-4">Follow-ups</th>
-              <th className="text-left py-3 px-4">Response Time</th>
-              <th className="text-left py-3 px-4">Rating</th>
-            </tr>
-          </thead>
-          <tbody>
-            {counselorData.counselors.map((counselor) => (
-              <motion.tr
-                key={counselor.id}
-                className="border-b border-secondary-200 dark:border-secondary-700 last:border-0"
-                whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
-              >
-                <td className="py-3 px-4">
-                  <div>
-                    <div className="font-medium text-secondary-700 dark:text-secondary-300">{counselor.name}</div>
-                    <div className="text-sm text-secondary-600 dark:text-secondary-400">{counselor.role}</div>
-                  </div>
-                </td>
-                <td className="py-3 px-4 text-secondary-600 dark:text-secondary-400">{counselor.activeStudents}</td>
-                <td className="py-3 px-4 text-secondary-600 dark:text-secondary-400">{counselor.performance.inquiriesHandled}</td>
-                <td className="py-3 px-4 text-success-main">{counselor.performance.conversions}</td>
-                <td className="py-3 px-4 text-secondary-600 dark:text-secondary-400">{counselor.performance.followUps}</td>
-                <td className="py-3 px-4 text-secondary-600 dark:text-secondary-400">{counselor.performance.avgResponseTime}</td>
-                <td className="py-3 px-4">
-                  <span className="text-warning-main">{counselor.rating} ⭐</span>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+  if (loading && !dashboardData) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+          <p className="text-gray-600">Loading counselor performance data...</p>
+        </div>
       </div>
-    </MagicCard>
-  );
+    );
+  }
 
-  const renderRecentInteractions = () => (
-    <MagicCard className="p-6 mb-6">
-      <h3 className="text-lg font-semibold text-secondary-700 dark:text-secondary-300 mb-4">
-        Recent Interactions
-      </h3>
-      <AnimatedList
-        as="div"
-        className="space-y-4"
-        animation="fade-up"
-        staggerDelay={0.1}
-      >
-        {counselorData.recentInteractions.map((interaction) => (
-          <motion.div
-            key={interaction.id}
-            className="glass p-4 rounded-xl"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div>
-                  <h4 className="font-medium text-secondary-700 dark:text-secondary-300">
-                    {interaction.counselor}
-                  </h4>
-                  <p className="text-sm text-secondary-600 dark:text-secondary-400">
-                    {interaction.type} with {interaction.student}
-                  </p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-medium text-success-main">
-                  {interaction.outcome}
-                </p>
-                <p className="text-sm text-secondary-500">
-                  {new Date(interaction.date).toLocaleTimeString()}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </AnimatedList>
-    </MagicCard>
-  );
-
-  const renderInsights = () => (
-    <MagicCard className="p-6">
-      <h3 className="text-lg font-semibold text-secondary-700 dark:text-secondary-300 mb-4">
-        Performance Insights
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {counselorData.insights.map((insight) => (
-          <motion.div
-            key={insight.id}
-            className="glass p-4 rounded-xl"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-2xl">
-                {insight.type === 'Performance' ? '📈' :
-                 insight.type === 'Workload' ? '⚖️' : '⭐'}
-              </span>
-              <h4 className="font-medium text-secondary-700 dark:text-secondary-300">
-                {insight.type}
-              </h4>
-            </div>
-            <p className="text-secondary-600 dark:text-secondary-400 mb-3 text-sm">
-              {insight.insight}
-            </p>
-            <div className="bg-secondary-50 dark:bg-secondary-800 p-3 rounded-lg mb-3">
-              <p className="text-sm text-secondary-600 dark:text-secondary-400">
-                {insight.recommendation}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className={`text-sm font-medium px-2 py-1 rounded-full ${
-                insight.impact === 'High' ? 'bg-success-main/10 text-success-main' :
-                'bg-warning-main/10 text-warning-main'
-              }`}>
-                {insight.impact} Impact
-              </span>
-            </div>
-          </motion.div>
-        ))}
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h3 className="text-xl font-semibold text-red-600 mb-2">Error Loading Data</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <ShimmerButton
+          onClick={() => window.location.reload()}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+        >
+          Retry
+        </ShimmerButton>
       </div>
-    </MagicCard>
-  );
+    );
+  }
 
   return (
-    <>
-      <ScrollProgress />
-      <div className="p-6">
-        {renderHeader()}
-        {renderOverviewCards()}
-        {renderCounselorDetails()}
-        {renderRecentInteractions()}
-        {renderInsights()}
-      </div>
-    </>
+    <div className="p-6 max-w-7xl mx-auto">
+      {renderHeader()}
+      {renderTabNavigation()}
+      
+      {activeTab === 'overview' && (
+        <div>
+          {renderOverviewCards()}
+          {renderCounselorGrid()}
+        </div>
+      )}
+      
+      {activeTab === 'performance' && renderPerformanceTab()}
+      {activeTab === 'comparison' && renderComparisonTab()}
+      
+      {activeTab === 'workload' && (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">⚖️</div>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">Workload Management</h3>
+          <p className="text-gray-500">Workload balancing and assignment management features coming soon...</p>
+        </div>
+      )}
+      
+      {activeTab === 'interactions' && (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">💬</div>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">Interaction Analytics</h3>
+          <p className="text-gray-500">Detailed interaction tracking and analytics coming soon...</p>
+        </div>
+      )}
+    </div>
   );
 };
 
