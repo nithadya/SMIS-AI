@@ -77,12 +77,6 @@ const Sidebar = ({ isCollapsed }) => {
       ]
     },
     {
-      title: 'Communication',
-      items: [
-        { title: 'Notifications', icon: '📢', path: '/notification-management' },
-      ]
-    },
-    {
       title: 'Academic',
       items: [
         { title: 'Program Management', icon: '📋', path: '/programs2' },
