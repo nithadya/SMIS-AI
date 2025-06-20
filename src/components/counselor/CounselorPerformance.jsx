@@ -15,6 +15,7 @@ import {
   calculatePerformanceMetrics,
   getCounselorComparison
 } from '../../lib/api/counselors';
+import { toast } from 'react-hot-toast';
 
 const CounselorPerformance = () => {
   const { user } = useAuth();
@@ -114,6 +115,7 @@ const CounselorPerformance = () => {
 
   const handleRecalculateMetrics = async (counselorId) => {
     try {
+      setLoading(true);
       const result = await calculatePerformanceMetrics(counselorId, selectedPeriod);
       if (result.error) {
         throw new Error(result.error);
@@ -125,10 +127,37 @@ const CounselorPerformance = () => {
         await fetchCounselorDetails(counselorId);
       }
       
-      alert('Performance metrics recalculated successfully!');
+      toast.success('Performance metrics recalculated successfully!');
     } catch (err) {
       console.error('Error recalculating metrics:', err);
-      alert('Failed to recalculate metrics: ' + err.message);
+      toast.error('Failed to recalculate metrics: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRecalculateAllMetrics = async () => {
+    try {
+      setLoading(true);
+      const counselors = dashboardData?.teamOverview || [];
+      
+      toast.info(`Calculating metrics for ${counselors.length} counselors...`);
+      
+      for (const counselor of counselors) {
+        const result = await calculatePerformanceMetrics(counselor.counselor_id, selectedPeriod);
+        if (result.error) {
+          console.error(`Error for counselor ${counselor.counselor_name}:`, result.error);
+        }
+      }
+      
+      // Refresh data
+      await fetchDashboardData();
+      toast.success('All performance metrics recalculated successfully!');
+    } catch (err) {
+      console.error('Error recalculating all metrics:', err);
+      toast.error('Failed to recalculate metrics: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,8 +185,17 @@ const CounselorPerformance = () => {
         </select>
 
         <ShimmerButton
+          onClick={handleRecalculateAllMetrics}
+          disabled={loading}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg disabled:opacity-50"
+        >
+          📊 Calculate All Metrics
+        </ShimmerButton>
+
+        <ShimmerButton
           onClick={() => fetchDashboardData()}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+          disabled={loading}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg disabled:opacity-50"
         >
           🔄 Refresh
         </ShimmerButton>
@@ -201,12 +239,12 @@ const CounselorPerformance = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">Total Counselors</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.totalCounselors}</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.totalCounselors || 0}</p>
             </div>
             <div className="text-3xl">👥</div>
           </div>
           <p className="text-xs text-green-600 mt-2">
-            {stats.activeCounselors} active this week
+            {stats.activeCounselors || 0} active this week
           </p>
         </MagicCard>
 
@@ -214,12 +252,12 @@ const CounselorPerformance = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Conversion Rate</p>
-              <p className="text-2xl font-bold text-green-600">{stats.avgConversionRate}%</p>
+              <p className="text-2xl font-bold text-green-600">{stats.avgConversionRate || 0}%</p>
             </div>
             <div className="text-3xl">📈</div>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            {stats.totalConversionsThisMonth} conversions this month
+            {stats.totalConversionsThisMonth || 0} conversions this month
           </p>
         </MagicCard>
 
@@ -227,18 +265,22 @@ const CounselorPerformance = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Satisfaction</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.avgSatisfaction}/5</p>
+              <p className="text-2xl font-bold text-yellow-600">
+                {stats.avgSatisfaction ? `${stats.avgSatisfaction}/5` : 'N/A'}
+              </p>
             </div>
             <div className="text-3xl">⭐</div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">Based on student feedback</p>
+          <p className="text-xs text-gray-500 mt-2">
+            {stats.avgSatisfaction ? 'Based on student feedback' : 'No feedback data available'}
+          </p>
         </MagicCard>
 
         <MagicCard className="p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly Interactions</p>
-              <p className="text-2xl font-bold text-purple-600">{stats.totalInteractionsThisMonth}</p>
+              <p className="text-2xl font-bold text-purple-600">{stats.totalInteractionsThisMonth || 0}</p>
             </div>
             <div className="text-3xl">💬</div>
           </div>

@@ -23,6 +23,8 @@ import Schedules from './components/schedules/Schedules';
 import PaymentManagement from './components/payments/PaymentManagement';
 import CurrencySupport from './components/currency/CurrencySupport';
 import StudentDiscount from './components/discount/StudentDiscount';
+import NotificationManagement from './components/notifications/NotificationManagement';
+import NotificationCenter from './components/marketing/NotificationCenter';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -122,6 +124,14 @@ const router = createBrowserRouter([
       {
         path: 'enrollment-registration2',
         element: <EnrollmentRegistrationManagement2 />
+      },
+      {
+        path: 'notification-management',
+        element: <NotificationManagement />
+      },
+      {
+        path: 'notification-center',
+        element: <NotificationCenter />
       }
     ]
   },

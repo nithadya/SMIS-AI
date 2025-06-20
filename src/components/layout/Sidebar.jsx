@@ -26,6 +26,12 @@ const Sidebar = ({ isCollapsed }) => {
       ]
     },
     {
+      title: 'Communication',
+      items: [
+        { title: 'Notification Center', icon: '📢', path: '/notification-center' },
+      ]
+    },
+    {
       title: 'Academic',
       items: [
         { title: 'Programs', icon: '📚', path: '/programs' },
@@ -68,6 +74,12 @@ const Sidebar = ({ isCollapsed }) => {
       title: 'Staff Management',
       items: [
         { title: 'Counselor Performance', icon: '👥', path: '/counselor-performance' },
+      ]
+    },
+    {
+      title: 'Communication',
+      items: [
+        { title: 'Notifications', icon: '📢', path: '/notification-management' },
       ]
     },
     {
