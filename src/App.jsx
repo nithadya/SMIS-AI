@@ -29,6 +29,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import EnrollmentRegistrationManagement2 from './components/enrollments/EnrollmentRegistrationManagement2';
+import AdvancedInquiries from './components/manager/AdvancedInquiries';
+import EnrollmentRegistrationManagement from './components/manager/EnrollmentRegistrationManagement';
 import Setup from './pages/Setup';
 
 // Create router configuration with basename
@@ -78,6 +80,10 @@ const router = createBrowserRouter([
         element: <AdvancedInquiryManagement />
       },
       {
+        path: 'advanced-inquiries',
+        element: <AdvancedInquiries />
+      },
+      {
         path: 'programs',
         element: <Programs />
       },
@@ -124,6 +130,10 @@ const router = createBrowserRouter([
       {
         path: 'enrollment-registration2',
         element: <EnrollmentRegistrationManagement2 />
+      },
+      {
+        path: 'enrollment-registration-management',
+        element: <EnrollmentRegistrationManagement />
       },
       {
         path: 'notification-management',

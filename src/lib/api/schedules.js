@@ -80,9 +80,9 @@ export const getCampusEvents = async (filters = {}) => {
       query = query.lte('start_date', filters.date_to);
     }
 
-    // For marketing users, show only published events unless they created them
+    // For marketing users, show only published events
     if (user.role === 'counselor') {
-      query = query.or(`is_published.eq.true,created_by.eq.${user.email}`);
+      query = query.eq('is_published', true);
     }
 
     query = query.order('start_date', { ascending: true });
@@ -543,5 +543,339 @@ export const getEventStatistics = async (eventId) => {
   } catch (error) {
     console.error('Error fetching event statistics:', error);
     return { data: null, error: error.message };
+  }
+};
+
+// Function to generate secure token
+const generateSecureToken = () => {
+  // Generate a secure token that's guaranteed to be under 255 characters
+  return crypto.randomUUID();
+};
+
+// Function to get students by marketing person (counselor)
+export const getStudentsByMarketingPerson = async (counselorEmail) => {
+  try {
+    const user = getCurrentUser();
+    if (!user) throw new Error('Not authenticated');
+    
+    refreshSupabaseAuth();
+
+    const { data, error } = await supabase
+      .from('students')
+      .select(`
+        id,
+        first_name,
+        last_name,
+        email,
+        phone,
+        created_by
+      `)
+      .eq('created_by', counselorEmail);
+
+    if (error) throw error;
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error('Error fetching students by marketing person:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+// Function to send event notification emails with booking functionality
+export const generateEventNotificationEmails = async (eventId, targetCounselors = []) => {
+  try {
+    const user = getCurrentUser();
+    if (!user) throw new Error('Not authenticated');
+    
+    refreshSupabaseAuth();
+
+    // Get event details
+    const { data: event, error: eventError } = await getCampusEventById(eventId);
+    if (eventError) throw new Error(eventError);
+
+    // Get all counselors if none specified
+    let counselorsToNotify = targetCounselors;
+    if (!counselorsToNotify.length) {
+      const { data: counselors, error: counselorError } = await getCounselors();
+      if (counselorError) throw new Error(counselorError);
+      counselorsToNotify = counselors.map(c => c.email);
+    }
+
+    // Get all students for the specified counselors
+    let allStudents = [];
+    for (const counselorEmail of counselorsToNotify) {
+      const { data: students, error: studentsError } = await getStudentsByMarketingPerson(counselorEmail);
+      if (!studentsError && students) {
+        allStudents = [...allStudents, ...students];
+      }
+    }
+
+    if (!allStudents.length) {
+      throw new Error('No students found for the specified marketing personnel');
+    }
+
+    // Generate tokens for each student
+    const tokens = [];
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+    
+    for (const student of allStudents) {
+      const token = generateSecureToken();
+      tokens.push({
+        event_id: eventId,
+        student_email: student.email,
+        token: token,
+        expires_at: expiresAt.toISOString(),
+        is_used: false
+      });
+    }
+
+    // Store tokens in database
+    const { error: tokenError } = await supabase
+      .from('event_notification_tokens')
+      .insert(tokens);
+
+    if (tokenError) throw tokenError;
+
+    // Prepare email content for manual sending
+    const baseUrl = window.location.origin;
+    const bookingUrl = `${baseUrl}/book-seat`;
+    
+    // Collect all email addresses
+    const allEmailAddresses = allStudents.map(student => student.email);
+    
+    // Prepare email content (plain text version for manual sending)
+    const subject = `🎉 Event Invitation: ${event.title} - Book Your Seat!`;
+    
+         // Create personalized email content with booking codes
+     const studentsWithTokens = allStudents.map((student, index) => ({
+       ...student,
+       token: tokens[index].token
+     }));
+
+     const emailBody = `Dear Students,
+
+You are invited to an exciting upcoming event!
+
+EVENT DETAILS:
+═══════════════════════════════════════════════════════════════
+📅 Event: ${event.title}
+📆 Date: ${new Date(event.start_date).toLocaleDateString()}
+⏰ Time: ${event.start_time || 'TBD'} - ${event.end_time || 'TBD'}
+📍 Location: ${event.location || 'TBD'}
+${event.capacity ? `🎫 Capacity: ${event.capacity} seats` : ''}
+🆔 Event ID: ${eventId}
+
+📝 Description: ${event.description || ''}
+═══════════════════════════════════════════════════════════════
+
+🎯 HOW TO BOOK YOUR SEAT:
+1. Visit our booking portal: ${bookingUrl}
+2. Enter your email address
+3. Enter Event ID: ${eventId}
+4. Enter your unique booking code (see individual student list below)
+
+📧 STUDENT BOOKING CODES:
+${studentsWithTokens.map(student => 
+`• ${student.first_name} ${student.last_name} (${student.email}): ${student.token}`
+).join('\n')}
+
+⚠️ IMPORTANT NOTES:
+• Each student must use their unique booking code
+• Booking codes expire in 7 days
+• Seats are limited and allocated on a first-come, first-served basis
+• Please forward this email to the respective students or inform them of their booking codes
+• If you have any questions, please contact your counselor or the administration office
+
+We look forward to seeing you at this event!
+
+Best regards,
+SMIS - Student Management Information System
+
+═══════════════════════════════════════════════════════════════
+This is an automated invitation. Please do not reply to this email.
+`;
+
+    // Create notification record
+    const { data: notification, error: notificationError } = await supabase
+      .from('event_notifications')
+      .insert({
+        event_id: eventId,
+        notification_type: 'email_manual',
+        target_type: 'counselor_students',
+        target_criteria: { counselors: counselorsToNotify },
+        recipient_count: allStudents.length,
+        sent_count: 0, // Will be updated manually
+        failed_count: 0,
+        status: 'prepared',
+        sent_at: new Date().toISOString(),
+        notification_content: {
+          subject: subject,
+          template: 'event_booking_invitation_manual',
+          body: emailBody
+        },
+        created_by: user.email
+      })
+      .select()
+      .single();
+
+    if (notificationError) throw notificationError;
+
+    // Generate mailto link
+    const maxUrlLength = 2000; // Safe URL length for most email clients
+    const encodedSubject = encodeURIComponent(subject);
+    const encodedBody = encodeURIComponent(emailBody);
+    
+    // If the full body is too long, use a shorter version
+    let finalBody = emailBody;
+    let finalEncodedBody = encodedBody;
+    
+    const baseMailtoUrl = `mailto:?subject=${encodedSubject}&body=`;
+    const bodyLength = baseMailtoUrl.length + finalEncodedBody.length;
+    
+    if (bodyLength > maxUrlLength) {
+      // Create a shorter version
+      const shortBody = `Dear Students,
+
+You are invited to: ${event.title}
+Date: ${new Date(event.start_date).toLocaleDateString()}
+Time: ${event.start_time || 'TBD'} - ${event.end_time || 'TBD'}
+Location: ${event.location || 'TBD'}
+Event ID: ${eventId}
+
+To book your seat:
+1. Visit: ${bookingUrl}  
+2. Use Event ID: ${eventId}
+3. Use your unique booking code (contact counselor for code)
+
+Best regards,
+SMIS Team
+
+Note: Full details with booking codes are in the original email.`;
+      
+      finalEncodedBody = encodeURIComponent(shortBody);
+    }
+
+    const mailtoUrl = `mailto:?subject=${encodedSubject}&body=${finalEncodedBody}`;
+
+    return {
+      data: {
+        notification,
+        mailtoUrl,
+        allEmailAddresses,
+        subject,
+        body: finalBody,
+        totalStudents: allStudents.length,
+        tokens: tokens.map(t => ({ student_email: t.student_email, token: t.token }))
+      },
+      error: null
+    };
+
+  } catch (error) {
+    console.error('Error generating event notification emails:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+// Function to handle seat booking from email link
+export const bookEventSeat = async (eventId, studentEmail, token) => {
+  try {
+    refreshSupabaseAuth();
+
+    // Verify token
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('event_notification_tokens')
+      .select('*')
+      .eq('token', token)
+      .eq('event_id', eventId)
+      .eq('student_email', studentEmail)
+      .eq('is_used', false)
+      .gt('expires_at', new Date().toISOString())
+      .single();
+
+    if (tokenError || !tokenData) {
+      throw new Error('Invalid or expired booking link');
+    }
+
+    // Get student data
+    const { data: student, error: studentError } = await supabase
+      .from('students')
+      .select('id')
+      .eq('email', studentEmail)
+      .single();
+
+    if (studentError || !student) {
+      throw new Error('Student not found');
+    }
+
+    // Check if student is already registered
+    const { data: existingRegistration, error: checkError } = await supabase
+      .from('event_registrations')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('student_id', student.id)
+      .single();
+
+    if (existingRegistration) {
+      throw new Error('You are already registered for this event');
+    }
+
+    // Register student for event
+    const { data: registration, error: registrationError } = await supabase
+      .from('event_registrations')
+      .insert({
+        event_id: eventId,
+        student_id: student.id,
+        registration_source: 'email_link',
+        status: 'registered',
+        created_by: 'system'
+      })
+      .select()
+      .single();
+
+    if (registrationError) throw registrationError;
+
+    // Mark token as used
+    const { error: updateTokenError } = await supabase
+      .from('event_notification_tokens')
+      .update({ is_used: true, updated_at: new Date().toISOString() })
+      .eq('id', tokenData.id);
+
+    if (updateTokenError) throw updateTokenError;
+
+    // Update event registered count
+    const { error: updateEventError } = await supabase
+      .rpc('increment_event_registration_count', { event_id: eventId });
+
+    if (updateEventError) throw updateEventError;
+
+    return { data: registration, error: null };
+
+  } catch (error) {
+    console.error('Error booking event seat:', error);
+    return { data: null, error: error.message };
+  }
+};
+
+// Function to create the increment function in database
+export const createIncrementFunction = async () => {
+  try {
+    const { error } = await supabase.rpc('exec_sql', {
+      sql: `
+        CREATE OR REPLACE FUNCTION increment_event_registration_count(event_id UUID)
+        RETURNS void AS $$
+        BEGIN
+          UPDATE campus_events 
+          SET registered_count = registered_count + 1 
+          WHERE id = event_id;
+        END;
+        $$ LANGUAGE plpgsql;
+      `
+    });
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error) {
+    console.error('Error creating increment function:', error);
+    return { error: error.message };
   }
 }; 

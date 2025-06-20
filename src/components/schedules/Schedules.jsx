@@ -9,7 +9,9 @@ import {
   publishCampusEvent,
   sendEventNotification,
   getCounselors,
-  getPrograms
+  getPrograms,
+  generateEventNotificationEmails,
+  getStudentsByMarketingPerson
 } from '../../lib/api/schedules';
 import { showToast } from '../common/Toast';
 
@@ -225,6 +227,9 @@ const EventModal = ({
 
 const Schedules = () => {
   const { user } = useAuth();
+  
+
+  
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -253,7 +258,8 @@ const Schedules = () => {
 
   const [notificationForm, setNotificationForm] = useState({
     target_type: 'all_students',
-    target_criteria: {}
+    target_criteria: {},
+    targetCounselors: []
   });
 
   const [filters, setFilters] = useState({
@@ -442,6 +448,37 @@ const Schedules = () => {
     }
   };
 
+  const handleSendEventNotifications = async () => {
+    if (!selectedEvent || notificationForm.targetCounselors.length === 0) return;
+
+    setLoading(true);
+    try {
+      const { data, error } = await generateEventNotificationEmails(selectedEvent.id, notificationForm.targetCounselors);
+      if (error) {
+        showToastMessage(error, 'error');
+        return;
+      }
+
+      // Open default email client with pre-filled content
+      const recipients = data.allEmailAddresses.join(',');
+      const fullMailtoUrl = data.mailtoUrl.replace('mailto:?', `mailto:${recipients}?`);
+      
+      // Try to open the email client
+      window.location.href = fullMailtoUrl;
+      
+      showToastMessage(`Email client opened with ${data.totalStudents} recipients. Please send the email manually.`, 'success');
+      setShowNotificationModal(false);
+      setSelectedEvent(null);
+      setNotificationForm({ target_type: 'counselor_students', targetCounselors: [] });
+      loadEvents();
+    } catch (error) {
+      console.error('Notification error:', error);
+      showToastMessage('Failed to prepare email notifications', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openEventModal = (event = null) => {
     if (event) {
       setSelectedEvent(event);
@@ -487,6 +524,7 @@ const Schedules = () => {
     setSelectedEvent(event);
     setNotificationForm({
       target_type: 'counselor_students',
+      targetCounselors: [],
       target_criteria: {}
     });
     setShowNotificationModal(true);
@@ -548,8 +586,9 @@ const Schedules = () => {
     });
   };
 
-  const canManageEvents = user?.role === 'manager';
-  const canSendNotifications = user?.role === 'counselor' || user?.role === 'manager';
+  // Permission checks
+  const canManageEvents = user?.role === 'manager' || user?.role === 'admin';
+  const canSendNotifications = user?.role === 'counselor' || user?.role === 'manager' || user?.role === 'admin';
 
   const EventCard = ({ event }) => (
     <motion.div
@@ -557,112 +596,132 @@ const Schedules = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:border-slate-300 transition-colors"
+      className="bg-white rounded-lg shadow-sm border p-6 hover:shadow-md transition-shadow"
     >
-            <div className="flex justify-between items-start mb-4">
-        <div className="flex gap-2">
-          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getTypeColor(event.event_type)}`}>
-            {event.event_type.replace('_', ' ').toUpperCase()}
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-slate-800 mb-2">{event.title}</h3>
+          <div className="flex items-center gap-4 text-sm text-slate-600 mb-2">
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(event.event_type)}`}>
+              {event.event_type?.replace('_', ' ')}
+            </span>
+            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status)}`}>
+              {event.status}
+            </span>
+            {event.priority && event.priority !== 'normal' && (
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                event.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                event.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {event.priority}
               </span>
-              <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(event.status)}`}>
-            {event.status.toUpperCase()}
-              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {event.is_published && (
+            <span className="text-green-600 text-sm">
+              ✓ Published
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2 text-sm text-slate-600 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">📅 Date:</span>
+          <span>{formatDate(event.start_date)}</span>
+          {event.end_date && event.end_date !== event.start_date && (
+            <span>- {formatDate(event.end_date)}</span>
+          )}
         </div>
         
-        <div className="flex gap-2">
-          {canSendNotifications && event.is_published && (
+        {(event.start_time || event.end_time) && (
+          <div className="flex items-center gap-2">
+            <span className="font-medium">🕐 Time:</span>
+            <span>
+              {event.start_time && formatTime(event.start_time)}
+              {event.start_time && event.end_time && ' - '}
+              {event.end_time && formatTime(event.end_time)}
+            </span>
+          </div>
+        )}
+
+        {event.location && (
+          <div className="flex items-center gap-2">
+            <span className="font-medium">📍 Location:</span>
+            <span>{event.location}</span>
+          </div>
+        )}
+
+        {event.capacity && (
+          <div className="flex items-center gap-2">
+            <span className="font-medium">👥 Capacity:</span>
+            <span>{event.registered_count || 0} / {event.capacity} registered</span>
+            {event.capacity && event.registered_count >= event.capacity && (
+              <span className="text-red-600 font-medium">FULL</span>
+            )}
+          </div>
+        )}
+
+        {event.description && (
+          <div className="pt-2">
+            <span className="font-medium">📝 Description:</span>
+            <p className="text-slate-600 mt-1">{event.description}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-between items-center pt-4 border-t">
+        <div className="text-xs text-slate-500">
+          Created by {event.created_by}
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {/* Show Notify button for events with capacity - available to both managers and counselors */}
+          {event.capacity && event.registered_count < event.capacity && canSendNotifications && (
             <button
               onClick={() => openNotificationModal(event)}
-              className="px-3 py-1 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
             >
-              Notify
+              📧 Notify
             </button>
           )}
+          
+          {/* Manager-only buttons */}
           {canManageEvents && (
             <>
-              <button
-                onClick={() => openEventModal(event)}
-                className="px-3 py-1 text-xs bg-slate-500 text-white rounded-lg hover:bg-slate-600 transition-colors"
-              >
-                Edit
-              </button>
               {!event.is_published && (
                 <button
                   onClick={() => handlePublishEvent(event.id)}
-                  className="px-3 py-1 text-xs bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
                 >
                   Publish
                 </button>
               )}
+              
+              <button
+                onClick={() => openEventModal(event)}
+                className="px-3 py-1 text-sm bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 transition-colors"
+              >
+                Edit
+              </button>
+              
               <button
                 onClick={() => handleDeleteEvent(event.id)}
-                className="px-3 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
               >
                 Delete
               </button>
             </>
           )}
         </div>
-            </div>
-            
-            <h4 className="text-lg font-medium text-slate-800 mb-4">{event.title}</h4>
-            
-            <div className="space-y-3 mb-6">
-              <div className="flex items-start gap-2">
-                <span className="text-slate-500 text-sm min-w-[4rem]">Date:</span>
-          <span className="text-sm text-slate-700">
-            {formatDate(event.start_date)}
-            {event.end_date && event.end_date !== event.start_date && (
-              ` - ${formatDate(event.end_date)}`
-            )}
-          </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-slate-500 text-sm min-w-[4rem]">Time:</span>
-          <span className="text-sm text-slate-700">
-            {formatTime(event.start_time)}
-            {event.end_time && ` - ${formatTime(event.end_time)}`}
-          </span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="text-slate-500 text-sm min-w-[4rem]">Location:</span>
-          <span className="text-sm text-slate-700">{event.location || 'TBD'}</span>
-        </div>
-        {event.description && (
-          <div className="flex items-start gap-2">
-            <span className="text-slate-500 text-sm min-w-[4rem]">Details:</span>
-            <span className="text-sm text-slate-700">{event.description}</span>
-              </div>
-        )}
-            </div>
-
-      {event.capacity && (
-            <div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
-                <div 
-                  className="h-full bg-blue-500 rounded-full transition-all duration-300"
-              style={{ width: `${Math.min((event.registered_count || 0) / event.capacity * 100, 100)}%` }}
-                />
-              </div>
-              <span className="text-sm text-slate-600">
-            {event.registered_count || 0}/{event.capacity} Registered
-              </span>
-            </div>
-      )}
-
-      {/* Show notification stats if any */}
-      {event.event_notifications && event.event_notifications.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-slate-100">
-          <div className="text-xs text-slate-500">
-            Notifications sent: {event.event_notifications.reduce((total, n) => total + (n.sent_count || 0), 0)} students
-          </div>
       </div>
-      )}
     </motion.div>
   );
 
-
-
+  // Enhanced NotificationModal with counselor selection
   const NotificationModal = () => (
     <motion.div
       initial={{ opacity: 0 }}
@@ -680,11 +739,11 @@ const Schedules = () => {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-xl p-6 w-full max-w-lg"
+        className="bg-white rounded-xl p-6 w-full max-w-md"
       >
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-slate-800">
-            Send Event Notification
+            Send Event Notifications
           </h3>
           <button
             onClick={() => {
@@ -698,56 +757,103 @@ const Schedules = () => {
         </div>
 
         {selectedEvent && (
-          <div className="mb-6 p-4 bg-slate-50 rounded-lg">
-            <h4 className="font-medium text-slate-800">{selectedEvent.title}</h4>
-            <p className="text-sm text-slate-600">
-              {formatDate(selectedEvent.start_date)} • {formatTime(selectedEvent.start_time)}
-            </p>
+          <div className="space-y-4">
+            <div className="bg-slate-50 p-4 rounded-lg">
+              <h4 className="font-medium text-slate-800 mb-2">{selectedEvent.title}</h4>
+              <p className="text-sm text-slate-600">
+                📅 {formatDate(selectedEvent.start_date)}
+              </p>
+              {selectedEvent.capacity && (
+                <p className="text-sm text-slate-600">
+                  👥 {selectedEvent.registered_count || 0} / {selectedEvent.capacity} registered
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Select Counselors (Marketing Personnel)
+                </label>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={notificationForm.targetCounselors.length === counselors.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNotificationForm(prev => ({
+                            ...prev,
+                            targetCounselors: counselors.map(c => c.email)
+                          }));
+                        } else {
+                          setNotificationForm(prev => ({
+                            ...prev,
+                            targetCounselors: []
+                          }));
+                        }
+                      }}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium">Select All</span>
+                  </label>
+                  {counselors.map((counselor) => (
+                    <label key={counselor.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={notificationForm.targetCounselors.includes(counselor.email)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNotificationForm(prev => ({
+                              ...prev,
+                              targetCounselors: [...prev.targetCounselors, counselor.email]
+                            }));
+                          } else {
+                            setNotificationForm(prev => ({
+                              ...prev,
+                              targetCounselors: prev.targetCounselors.filter(email => email !== counselor.email)
+                            }));
+                          }
+                        }}
+                        className="mr-2"
+                      />
+                      <span className="text-sm">{counselor.full_name} ({counselor.email})</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+                <p className="text-sm text-amber-800">
+                  📧 <strong>Manual Email Process:</strong> This will open your default email client with pre-filled content including:
+                  <br />• All student email addresses
+                  <br />• Event details and booking instructions  
+                  <br />• Individual booking codes for each student
+                  <br />• You'll need to manually send the email
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <button
+                onClick={() => {
+                  setShowNotificationModal(false);
+                  setSelectedEvent(null);
+                }}
+                className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendEventNotifications}
+                disabled={loading || notificationForm.targetCounselors.length === 0}
+                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Preparing...' : `📧 Open Email Client`}
+              </button>
+            </div>
           </div>
         )}
-
-        <form onSubmit={handleSendNotification} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Send To
-            </label>
-            <select
-              value={notificationForm.target_type}
-              onChange={(e) => setNotificationForm({ ...notificationForm, target_type: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="counselor_students">My Assigned Students</option>
-              <option value="all_students">All Active Students</option>
-            </select>
-      </div>
-
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> This will send an email notification to students about the event. 
-              The notification will include event details, date, time, and location.
-            </p>
-              </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={() => {
-                setShowNotificationModal(false);
-                setSelectedEvent(null);
-              }}
-              className="px-4 py-2 text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
-            >
-              {loading ? 'Sending...' : 'Send Notification'}
-            </button>
-              </div>
-        </form>
       </motion.div>
     </motion.div>
   );

@@ -61,12 +61,12 @@ const Sidebar = ({ isCollapsed }) => {
       title: 'Student Management',
       items: [
         { title: 'Comprehensive View', icon: '📚', path: '/student-management2' },
-        { title: 'Advanced Inquiries', icon: '📈', path: '/advanced-inquiry' },
+        { title: 'Advanced Inquiries', icon: '📈', path: '/advanced-inquiries' },
         {
-          title: 'Enrollment & Registration 2',
+          title: 'Enrollment & Registration',
           key: 'enrollment2',
           icon: <UserAddOutlined />,
-          path: '/enrollment-registration2'
+          path: '/enrollment-registration-management'
         },
       ]
     },

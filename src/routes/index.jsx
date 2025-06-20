@@ -29,6 +29,9 @@ const Payments = React.lazy(() => import('../components/payments/Payments'));
 const CurrencySupport = React.lazy(() => import('../components/currency/CurrencySupport'));
 const StudentDiscount = React.lazy(() => import('../components/discount/StudentDiscount'));
 const Analytics = React.lazy(() => import('../components/analytics/Analytics'));
+const BookSeat = React.lazy(() => import('../components/auth/BookSeat'));
+const AdvancedInquiries = React.lazy(() => import('../components/manager/AdvancedInquiries'));
+const EnrollmentRegistrationManagement = React.lazy(() => import('../components/manager/EnrollmentRegistrationManagement'));
 
 const AppRoutes = () => {
   return (
@@ -55,6 +58,9 @@ const AppRoutes = () => {
         <Route path="/currency-support" element={<CurrencySupport />} />
         <Route path="/student-discount" element={<StudentDiscount />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/book-seat" element={<BookSeat />} />
+        <Route path="/advanced-inquiries" element={<AdvancedInquiries />} />
+        <Route path="/enrollment-registration-management" element={<EnrollmentRegistrationManagement />} />
 
         {/* Catch all route */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
