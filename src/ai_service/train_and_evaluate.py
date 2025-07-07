@@ -3,7 +3,7 @@ Script to train and evaluate the AI prediction pipeline.
 Handles model training, prediction generation, and evaluation metrics.
 """
 import os
-from ai_service.pipeline import PredictionPipeline
+from pipeline import PredictionPipeline
 import logging
 import json
 from datetime import datetime
