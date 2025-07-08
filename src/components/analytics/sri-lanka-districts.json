@@ -1,0 +1,455 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Colombo"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.8527, 6.9271],
+            [79.9527, 6.9271],
+            [79.9527, 7.0271],
+            [79.8527, 7.0271],
+            [79.8527, 6.9271]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Gampaha"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.9927, 7.0271],
+            [80.0927, 7.0271],
+            [80.0927, 7.1271],
+            [79.9927, 7.1271],
+            [79.9927, 7.0271]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kalutara"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.9527, 6.5271],
+            [80.0527, 6.5271],
+            [80.0527, 6.6271],
+            [79.9527, 6.6271],
+            [79.9527, 6.5271]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kandy"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.5927, 7.2271],
+            [80.6927, 7.2271],
+            [80.6927, 7.3271],
+            [80.5927, 7.3271],
+            [80.5927, 7.2271]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Matale"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.5927, 7.4271],
+            [80.6927, 7.4271],
+            [80.6927, 7.5271],
+            [80.5927, 7.5271],
+            [80.5927, 7.4271]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Nuwara Eliya"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.7927, 6.9271],
+            [80.8927, 6.9271],
+            [80.8927, 7.0271],
+            [80.7927, 7.0271],
+            [80.7927, 6.9271]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Galle"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.1927, 6.0271],
+            [80.2927, 6.0271],
+            [80.2927, 6.1271],
+            [80.1927, 6.1271],
+            [80.1927, 6.0271]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Matara"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.5927, 5.9271],
+            [80.6927, 5.9271],
+            [80.6927, 6.0271],
+            [80.5927, 6.0271],
+            [80.5927, 5.9271]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Hambantota"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [81.1927, 6.1271],
+            [81.2927, 6.1271],
+            [81.2927, 6.2271],
+            [81.1927, 6.2271],
+            [81.1927, 6.1271]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Jaffna"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.0027, 9.6571],
+            [80.1027, 9.6571],
+            [80.1027, 9.7571],
+            [80.0027, 9.7571],
+            [80.0027, 9.6571]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kilinochchi"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.3027, 9.3571],
+            [80.4027, 9.3571],
+            [80.4027, 9.4571],
+            [80.3027, 9.4571],
+            [80.3027, 9.3571]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Mannar"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.8027, 8.9571],
+            [79.9027, 8.9571],
+            [79.9027, 9.0571],
+            [79.8027, 9.0571],
+            [79.8027, 8.9571]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Vavuniya"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.4027, 8.7571],
+            [80.5027, 8.7571],
+            [80.5027, 8.8571],
+            [80.4027, 8.8571],
+            [80.4027, 8.7571]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Mullaitivu"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.7027, 9.1571],
+            [80.8027, 9.1571],
+            [80.8027, 9.2571],
+            [80.7027, 9.2571],
+            [80.7027, 9.1571]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Batticaloa"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [81.6027, 7.7071],
+            [81.7027, 7.7071],
+            [81.7027, 7.8071],
+            [81.6027, 7.8071],
+            [81.6027, 7.7071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Ampara"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [81.6527, 7.2071],
+            [81.7527, 7.2071],
+            [81.7527, 7.3071],
+            [81.6527, 7.3071],
+            [81.6527, 7.2071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Trincomalee"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [81.1527, 8.5071],
+            [81.2527, 8.5071],
+            [81.2527, 8.6071],
+            [81.1527, 8.6071],
+            [81.1527, 8.5071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kurunegala"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.3527, 7.4071],
+            [80.4527, 7.4071],
+            [80.4527, 7.5071],
+            [80.3527, 7.5071],
+            [80.3527, 7.4071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Puttalam"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.8027, 7.9071],
+            [79.9027, 7.9071],
+            [79.9027, 8.0071],
+            [79.8027, 8.0071],
+            [79.8027, 7.9071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Anuradhapura"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.3527, 8.3071],
+            [80.4527, 8.3071],
+            [80.4527, 8.4071],
+            [80.3527, 8.4071],
+            [80.3527, 8.3071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Polonnaruwa"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.9527, 7.9071],
+            [81.0527, 7.9071],
+            [81.0527, 8.0071],
+            [80.9527, 8.0071],
+            [80.9527, 7.9071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Badulla"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [81.0527, 6.9071],
+            [81.1527, 6.9071],
+            [81.1527, 7.0071],
+            [81.0527, 7.0071],
+            [81.0527, 6.9071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Moneragala"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [81.3527, 6.8071],
+            [81.4527, 6.8071],
+            [81.4527, 6.9071],
+            [81.3527, 6.9071],
+            [81.3527, 6.8071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Ratnapura"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.3527, 6.6071],
+            [80.4527, 6.6071],
+            [80.4527, 6.7071],
+            [80.3527, 6.7071],
+            [80.3527, 6.6071]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Kegalle"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [80.3527, 7.1071],
+            [80.4527, 7.1071],
+            [80.4527, 7.2071],
+            [80.3527, 7.2071],
+            [80.3527, 7.1071]
+          ]
+        ]
+      }
+    }
+  ]
+}

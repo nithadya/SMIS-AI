@@ -1,0 +1,135 @@
+{
+  "prediction_date": "2025-07-08T08:26:46.364238",
+  "prediction_period": {
+    "year": 2030,
+    "month": 6,
+    "period_type": "monthly"
+  },
+  "districts": [
+    {
+      "name": "Kandy",
+      "predicted_registrations": 94,
+      "percentage": 8.6
+    },
+    {
+      "name": "Galle",
+      "predicted_registrations": 86,
+      "percentage": 7.8
+    },
+    {
+      "name": "Gampaha",
+      "predicted_registrations": 86,
+      "percentage": 7.8
+    },
+    {
+      "name": "Colombo",
+      "predicted_registrations": 84,
+      "percentage": 7.7
+    },
+    {
+      "name": "Jaffna",
+      "predicted_registrations": 82,
+      "percentage": 7.5
+    },
+    {
+      "name": "Batticaloa",
+      "predicted_registrations": 51,
+      "percentage": 4.7
+    },
+    {
+      "name": "Matale",
+      "predicted_registrations": 49,
+      "percentage": 4.5
+    },
+    {
+      "name": "Trincomalee",
+      "predicted_registrations": 48,
+      "percentage": 4.4
+    },
+    {
+      "name": "Badulla",
+      "predicted_registrations": 47,
+      "percentage": 4.3
+    },
+    {
+      "name": "Nuwara Eliya",
+      "predicted_registrations": 47,
+      "percentage": 4.3
+    },
+    {
+      "name": "Kalutara",
+      "predicted_registrations": 46,
+      "percentage": 4.2
+    },
+    {
+      "name": "Kurunegala",
+      "predicted_registrations": 45,
+      "percentage": 4.1
+    },
+    {
+      "name": "Matara",
+      "predicted_registrations": 45,
+      "percentage": 4.1
+    },
+    {
+      "name": "Ratnapura",
+      "predicted_registrations": 45,
+      "percentage": 4.1
+    },
+    {
+      "name": "Anuradhapura",
+      "predicted_registrations": 43,
+      "percentage": 3.9
+    },
+    {
+      "name": "Kegalle",
+      "predicted_registrations": 21,
+      "percentage": 1.9
+    },
+    {
+      "name": "Mullaitivu",
+      "predicted_registrations": 21,
+      "percentage": 1.9
+    },
+    {
+      "name": "Hambantota",
+      "predicted_registrations": 20,
+      "percentage": 1.8
+    },
+    {
+      "name": "Kilinochchi",
+      "predicted_registrations": 20,
+      "percentage": 1.8
+    },
+    {
+      "name": "Mannar",
+      "predicted_registrations": 20,
+      "percentage": 1.8
+    },
+    {
+      "name": "Moneragala",
+      "predicted_registrations": 20,
+      "percentage": 1.8
+    },
+    {
+      "name": "Polonnaruwa",
+      "predicted_registrations": 20,
+      "percentage": 1.8
+    },
+    {
+      "name": "Vavuniya",
+      "predicted_registrations": 20,
+      "percentage": 1.8
+    },
+    {
+      "name": "Ampara",
+      "predicted_registrations": 19,
+      "percentage": 1.7
+    },
+    {
+      "name": "Puttalam",
+      "predicted_registrations": 17,
+      "percentage": 1.6
+    }
+  ]
+}
