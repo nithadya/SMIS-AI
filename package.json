@@ -12,6 +12,9 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
+  "overrides": {
+    "odbc": false
+  },
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
     "@emotion/react": "^11.11.3",
