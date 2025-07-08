@@ -1,24 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  LineChart, Line, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
-} from 'recharts';
-import { MagicCard, AnimatedList, ScrollProgress } from '../ui';
-import StatCard from './StatCard';
-import { 
-  getDashboardStats, 
-  getEnrollmentTrends, 
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { MagicCard, AnimatedList, ScrollProgress } from "../ui";
+import StatCard from "./StatCard";
+import DashboardReport from "./DashboardReport";
+import {
+  getDashboardStats,
+  getEnrollmentTrends,
   getProgramAnalytics,
   getPaymentAnalytics,
   getBatchAnalytics,
   getCounselorPerformance,
-  getRecentActivities
-} from '../../lib/api/dashboard';
+  getRecentActivities,
+} from "../../lib/api/dashboard";
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [selectedPeriod, setSelectedPeriod] = useState("month");
+  const [showReport, setShowReport] = useState(false);
   const [dashboardData, setDashboardData] = useState({
     overview: {},
     enrollmentTrends: { trends: [], statusCounts: [] },
@@ -26,10 +41,18 @@ const Dashboard = () => {
     paymentAnalytics: {},
     batchAnalytics: {},
     counselorPerformance: [],
-    recentActivities: []
+    recentActivities: [],
   });
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658'];
+  const COLORS = [
+    "#0088FE",
+    "#00C49F",
+    "#FFBB28",
+    "#FF8042",
+    "#8884D8",
+    "#82CA9D",
+    "#FFC658",
+  ];
 
   useEffect(() => {
     fetchDashboardData();
@@ -45,7 +68,7 @@ const Dashboard = () => {
         paymentsRes,
         batchesRes,
         counselorsRes,
-        activitiesRes
+        activitiesRes,
       ] = await Promise.all([
         getDashboardStats(),
         getEnrollmentTrends(),
@@ -53,7 +76,7 @@ const Dashboard = () => {
         getPaymentAnalytics(),
         getBatchAnalytics(),
         getCounselorPerformance(),
-        getRecentActivities()
+        getRecentActivities(),
       ]);
 
       setDashboardData({
@@ -63,19 +86,19 @@ const Dashboard = () => {
         paymentAnalytics: paymentsRes.data || {},
         batchAnalytics: batchesRes.data || {},
         counselorPerformance: counselorsRes.data || [],
-        recentActivities: activitiesRes.data || []
+        recentActivities: activitiesRes.data || [],
       });
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-LK', {
-      style: 'currency',
-      currency: 'LKR',
+    return new Intl.NumberFormat("en-LK", {
+      style: "currency",
+      currency: "LKR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -85,7 +108,7 @@ const Dashboard = () => {
     <MagicCard className="p-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2"
@@ -97,13 +120,21 @@ const Dashboard = () => {
           </p>
         </div>
         <div className="flex gap-3">
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={fetchDashboardData}
             className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
           >
             🔄 Refresh Data
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowReport(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:shadow-lg transition-all duration-200"
+          >
+            📥 Download Report
           </motion.button>
         </div>
       </div>
@@ -112,62 +143,70 @@ const Dashboard = () => {
 
   const renderOverviewStats = () => {
     const stats = [
-      { 
-        title: 'Total Enrollments', 
-        value: dashboardData.overview.totalEnrollments?.toLocaleString() || '0', 
-        icon: '📝', 
-        color: 'blue',
-        trend: '+' + Math.round(Math.random() * 10) + '%'
+      {
+        title: "Total Enrollments",
+        value: dashboardData.overview.totalEnrollments?.toLocaleString() || "0",
+        icon: "📝",
+        color: "blue",
+        trend: "+" + Math.round(Math.random() * 10) + "%",
       },
-      { 
-        title: 'Registered Students', 
-        value: dashboardData.overview.totalStudents?.toLocaleString() || '0', 
-        icon: '🎓', 
-        color: 'green',
-        trend: '+' + Math.round(Math.random() * 8) + '%'
+      {
+        title: "Registered Students",
+        value: dashboardData.overview.totalStudents?.toLocaleString() || "0",
+        icon: "🎓",
+        color: "green",
+        trend: "+" + Math.round(Math.random() * 8) + "%",
       },
-      { 
-        title: 'Total Revenue', 
-        value: formatCurrency(dashboardData.overview.totalRevenue || 0), 
-        icon: '💰', 
-        color: 'emerald',
-        trend: '+' + Math.round(Math.random() * 15) + '%'
+      {
+        title: "Total Revenue",
+        value: formatCurrency(dashboardData.overview.totalRevenue || 0),
+        icon: "💰",
+        color: "emerald",
+        trend: "+" + Math.round(Math.random() * 15) + "%",
       },
-      { 
-        title: 'Active Programs', 
-        value: dashboardData.overview.totalPrograms?.toLocaleString() || '0', 
-        icon: '📚', 
-        color: 'purple',
-        trend: 'Stable'
+      {
+        title: "Active Programs",
+        value: dashboardData.overview.totalPrograms?.toLocaleString() || "0",
+        icon: "📚",
+        color: "purple",
+        trend: "Stable",
       },
-      { 
-        title: 'Total Inquiries', 
-        value: dashboardData.overview.totalInquiries?.toLocaleString() || '0', 
-        icon: '💬', 
-        color: 'orange',
-        trend: '+' + Math.round(Math.random() * 12) + '%'
+      {
+        title: "Total Inquiries",
+        value: dashboardData.overview.totalInquiries?.toLocaleString() || "0",
+        icon: "💬",
+        color: "orange",
+        trend: "+" + Math.round(Math.random() * 12) + "%",
       },
-      { 
-        title: 'Active Batches', 
-        value: dashboardData.overview.totalBatches?.toLocaleString() || '0', 
-        icon: '👥', 
-        color: 'indigo',
-        trend: '+' + Math.round(Math.random() * 5) + '%'
+      {
+        title: "Active Batches",
+        value: dashboardData.overview.totalBatches?.toLocaleString() || "0",
+        icon: "👥",
+        color: "indigo",
+        trend: "+" + Math.round(Math.random() * 5) + "%",
       },
-      { 
-        title: 'Pending Payments', 
-        value: formatCurrency(dashboardData.overview.pendingPayments || 0), 
-        icon: '⏳', 
-        color: 'yellow',
-        trend: '-' + Math.round(Math.random() * 5) + '%'
+      {
+        title: "Pending Payments",
+        value: formatCurrency(dashboardData.overview.pendingPayments || 0),
+        icon: "⏳",
+        color: "yellow",
+        trend: "-" + Math.round(Math.random() * 5) + "%",
       },
-      { 
-        title: 'Collection Rate', 
-        value: dashboardData.overview.totalRevenue && dashboardData.overview.pendingPayments ? 
-          Math.round((dashboardData.overview.totalRevenue / (dashboardData.overview.totalRevenue + dashboardData.overview.pendingPayments)) * 100) + '%' : '0%', 
-        icon: '📊', 
-        color: 'cyan',
-        trend: '+' + Math.round(Math.random() * 3) + '%'
+      {
+        title: "Collection Rate",
+        value:
+          dashboardData.overview.totalRevenue &&
+          dashboardData.overview.pendingPayments
+            ? Math.round(
+                (dashboardData.overview.totalRevenue /
+                  (dashboardData.overview.totalRevenue +
+                    dashboardData.overview.pendingPayments)) *
+                  100
+              ) + "%"
+            : "0%",
+        icon: "📊",
+        color: "cyan",
+        trend: "+" + Math.round(Math.random() * 3) + "%",
       },
     ];
 
@@ -203,11 +242,13 @@ const Dashboard = () => {
           Enrollment Trends
         </h2>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Enrollment Status Distribution */}
         <div>
-          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Status Distribution</h3>
+          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+            Status Distribution
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -215,14 +256,21 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name}: ${(percent * 100).toFixed(0)}%`
+                }
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
-                {dashboardData.enrollmentTrends.statusCounts.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
+                {dashboardData.enrollmentTrends.statusCounts.map(
+                  (entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  )
+                )}
               </Pie>
               <Tooltip />
             </PieChart>
@@ -231,7 +279,9 @@ const Dashboard = () => {
 
         {/* Monthly Trends */}
         <div>
-          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Monthly Trends</h3>
+          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+            Monthly Trends
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={dashboardData.enrollmentTrends.trends}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -240,12 +290,12 @@ const Dashboard = () => {
               <Tooltip />
               <Legend />
               {Object.keys(dashboardData.enrollmentTrends.trends[0] || {})
-                .filter(key => key !== 'month')
+                .filter((key) => key !== "month")
                 .map((status, index) => (
-                  <Line 
+                  <Line
                     key={status}
-                    type="monotone" 
-                    dataKey={status} 
+                    type="monotone"
+                    dataKey={status}
                     stroke={COLORS[index % COLORS.length]}
                     strokeWidth={2}
                   />
@@ -262,25 +312,24 @@ const Dashboard = () => {
       <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
         Program Performance
       </h2>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Program Enrollments Chart */}
         <div>
-          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Enrollments by Program</h3>
+          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+            Enrollments by Program
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dashboardData.programAnalytics}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="code" 
-                angle={-45}
-                textAnchor="end"
-                height={100}
-              />
+              <XAxis dataKey="code" angle={-45} textAnchor="end" height={100} />
               <YAxis />
-              <Tooltip 
+              <Tooltip
                 formatter={(value, name) => [value, name]}
                 labelFormatter={(label) => {
-                  const program = dashboardData.programAnalytics.find(p => p.code === label);
+                  const program = dashboardData.programAnalytics.find(
+                    (p) => p.code === label
+                  );
                   return program ? program.name : label;
                 }}
               />
@@ -292,7 +341,9 @@ const Dashboard = () => {
 
         {/* Program Details Table */}
         <div>
-          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Program Details</h3>
+          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+            Program Details
+          </h3>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-800">
@@ -309,30 +360,41 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {dashboardData.programAnalytics.slice(0, 5).map((program, index) => (
-                  <tr key={index}>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                      <div>
-                        <div className="font-medium">{program.code}</div>
-                        <div className="text-gray-500 dark:text-gray-400 text-xs truncate" title={program.name}>
-                          {program.name.length > 30 ? program.name.substring(0, 30) + '...' : program.name}
+                {dashboardData.programAnalytics
+                  .slice(0, 5)
+                  .map((program, index) => (
+                    <tr key={index}>
+                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                        <div>
+                          <div className="font-medium">{program.code}</div>
+                          <div
+                            className="text-gray-500 dark:text-gray-400 text-xs truncate"
+                            title={program.name}
+                          >
+                            {program.name.length > 30
+                              ? program.name.substring(0, 30) + "..."
+                              : program.name}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                      {program.totalEnrollments}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        parseFloat(program.conversionRate) >= 80 ? 'bg-green-100 text-green-800' :
-                        parseFloat(program.conversionRate) >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {program.conversionRate}%
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                        {program.totalEnrollments}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            parseFloat(program.conversionRate) >= 80
+                              ? "bg-green-100 text-green-800"
+                              : parseFloat(program.conversionRate) >= 60
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {program.conversionRate}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -346,22 +408,28 @@ const Dashboard = () => {
       <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
         Payment Analytics
       </h2>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Monthly Revenue Trend */}
         <div>
-          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Monthly Revenue</h3>
+          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+            Monthly Revenue
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={dashboardData.paymentAnalytics.monthlyRevenue || []}>
+            <AreaChart
+              data={dashboardData.paymentAnalytics.monthlyRevenue || []}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis />
-              <Tooltip formatter={(value) => [formatCurrency(value), 'Revenue']} />
-              <Area 
-                type="monotone" 
-                dataKey="revenue" 
-                stroke="#3B82F6" 
-                fill="#3B82F6" 
+              <Tooltip
+                formatter={(value) => [formatCurrency(value), "Revenue"]}
+              />
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                stroke="#3B82F6"
+                fill="#3B82F6"
                 fillOpacity={0.3}
               />
             </AreaChart>
@@ -370,7 +438,9 @@ const Dashboard = () => {
 
         {/* Payment Methods Distribution */}
         <div>
-          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Payment Methods</h3>
+          <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+            Payment Methods
+          </h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -378,16 +448,25 @@ const Dashboard = () => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) =>
+                  `${name}: ${(percent * 100).toFixed(0)}%`
+                }
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
               >
-                {(dashboardData.paymentAnalytics.paymentMethods || []).map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
+                {(dashboardData.paymentAnalytics.paymentMethods || []).map(
+                  (entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  )
+                )}
               </Pie>
-              <Tooltip formatter={(value) => [formatCurrency(value), 'Amount']} />
+              <Tooltip
+                formatter={(value) => [formatCurrency(value), "Amount"]}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -395,7 +474,9 @@ const Dashboard = () => {
 
       {/* Recent Payments */}
       <div className="mt-6">
-        <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">Recent Payments</h3>
+        <h3 className="text-lg font-medium mb-4 text-gray-700 dark:text-gray-300">
+          Recent Payments
+        </h3>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
@@ -415,29 +496,37 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {(dashboardData.paymentAnalytics.recentPayments || []).map((payment, index) => (
-                <tr key={index}>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <div>
-                      <div className="font-medium">{payment.studentName}</div>
-                      <div className="text-gray-500 dark:text-gray-400 text-xs">{payment.program}</div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {formatCurrency(payment.amount)}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      payment.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {payment.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(payment.date).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
+              {(dashboardData.paymentAnalytics.recentPayments || []).map(
+                (payment, index) => (
+                  <tr key={index}>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      <div>
+                        <div className="font-medium">{payment.studentName}</div>
+                        <div className="text-gray-500 dark:text-gray-400 text-xs">
+                          {payment.program}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {formatCurrency(payment.amount)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          payment.status === "Completed"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {payment.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                      {new Date(payment.date).toLocaleDateString()}
+                    </td>
+                  </tr>
+                )
+              )}
             </tbody>
           </table>
         </div>
@@ -450,7 +539,7 @@ const Dashboard = () => {
       <h2 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6">
         Recent Activities
       </h2>
-      
+
       <div className="space-y-4 max-h-96 overflow-y-auto">
         {dashboardData.recentActivities.map((activity, index) => (
           <motion.div
@@ -462,8 +551,12 @@ const Dashboard = () => {
           >
             <div className="text-2xl">{activity.icon}</div>
             <div className="flex-1">
-              <h4 className="font-medium text-gray-900 dark:text-gray-100">{activity.title}</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{activity.description}</p>
+              <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                {activity.title}
+              </h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {activity.description}
+              </p>
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                 {new Date(activity.timestamp).toLocaleString()}
               </p>
@@ -482,7 +575,10 @@ const Dashboard = () => {
             <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-32"></div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="bg-gray-200 dark:bg-gray-700 rounded-lg h-32"></div>
+                <div
+                  key={i}
+                  className="bg-gray-200 dark:bg-gray-700 rounded-lg h-32"
+                ></div>
               ))}
             </div>
             <div className="bg-gray-200 dark:bg-gray-700 rounded-lg h-96"></div>
@@ -499,18 +595,37 @@ const Dashboard = () => {
         {renderWelcomeSection()}
         {renderOverviewStats()}
         {renderEnrollmentTrends()}
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {renderProgramAnalytics()}
-          <div className="space-y-6">
-            {renderPaymentAnalytics()}
-          </div>
+          <div className="space-y-6">{renderPaymentAnalytics()}</div>
         </div>
-        
+
         {renderRecentActivities()}
+
+        {showReport && (
+          <DashboardReport
+            analyticsData={{
+              totalStudents: dashboardData.overview.totalStudents || 0,
+              activeStudents: dashboardData.overview.totalEnrollments || 0,
+              newEnrollments:
+                dashboardData.enrollmentTrends.trends?.[0]?.value || 0,
+              graduationRate: Math.round(Math.random() * 20 + 80), // Example data
+              totalCourses: dashboardData.overview.totalPrograms || 0,
+              activeCourses: dashboardData.overview.totalBatches || 0,
+              avgCourseRating: (4.5).toFixed(1), // Example data
+              popularCourse: "BSc in Computing", // Example data
+              avgGPA: (3.4).toFixed(1), // Example data
+              attendanceRate: Math.round(Math.random() * 10 + 85), // Example data
+              studentSatisfaction: Math.round(Math.random() * 10 + 85), // Example data
+              retentionRate: Math.round(Math.random() * 10 + 85), // Example data
+            }}
+            onClose={() => setShowReport(false)}
+          />
+        )}
       </div>
     </div>
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

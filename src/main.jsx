@@ -1,9 +1,11 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { ConfigProvider } from 'antd'
-import App from './App.jsx'
-import './index.css'
-import 'antd/dist/reset.css'
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { ConfigProvider } from 'antd';
+import App from './App.jsx';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import './index.css';
+import 'antd/dist/reset.css';
 
 // Configure Ant Design theme
 const theme = {
@@ -44,10 +46,18 @@ const theme = {
   }
 };
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+// Create root element
+const root = ReactDOM.createRoot(document.getElementById('root'));
+
+// Render app with all providers
+root.render(
   <React.StrictMode>
     <ConfigProvider theme={theme}>
-      <App />
+      <AuthProvider>
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
+      </AuthProvider>
     </ConfigProvider>
   </React.StrictMode>
-)
+);

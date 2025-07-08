@@ -1,356 +1,230 @@
-# SMIS - Student Management Information System
+# ICBT Student Management Information System with AI Predictions
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/rasiboi/SMISFrontend)
-[![React](https://img.shields.io/badge/React-18.2.0-61dafb.svg)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-5.0.8-646cff.svg)](https://vitejs.dev/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+## Overview
 
-## 🎯 Overview
+ICBT SMIS is a comprehensive student management system with integrated AI-powered registration predictions. The system combines a modern React frontend with a sophisticated machine learning pipeline to provide accurate student registration forecasts across different districts in Sri Lanka.
 
-SMIS (Student Management Information System) is a comprehensive web-based platform designed for educational institutions to manage student enrollment, payment processing, program administration, and academic analytics. Built with modern React architecture and integrated with Supabase backend services, SMIS provides a scalable solution for educational management.
+## Features
 
-## ✨ Key Features
+- **Student Registration Prediction**
 
-### 🎓 **Student Management**
-- Complete student lifecycle management
-- Multi-role access control (Manager, Marketing, Counselor)
-- Advanced student search and filtering
-- Profile management with academic history
+  - District-wise forecasting
+  - Interactive visualization
+  - Trend analysis
+  - Performance metrics
 
-### 💰 **Payment Processing**
-- Integrated PayHere payment gateway
-- Flexible payment plans (full/installment)
-- Automated receipt generation
-- Real-time transaction tracking
-- Multi-currency support
+- **Analytics Dashboard**
 
-### 📚 **Program & Batch Management**
-- Dynamic program creation and management
-- Batch scheduling and capacity management
-- Enrollment tracking and analytics
-- Course prerequisite management
+  - Interactive Sri Lanka map
+  - Real-time data updates
+  - Multiple chart types
+  - Export capabilities
 
-### 📊 **Analytics & Reporting**
-- Real-time dashboard analytics
-- Student performance metrics
-- Payment analytics and trends
-- Counselor performance tracking
-- Custom report generation
+- **AI Pipeline**
+  - Advanced ML models
+  - Automated training
+  - Performance monitoring
+  - Data validation
 
-### 🔐 **Security & Authentication**
-- Role-based access control (RBAC)
-- Secure authentication with Supabase Auth
-- Protected routes and API endpoints
-- Audit trail for critical operations
+## Technology Stack
 
-## 🏗️ System Architecture
+### Frontend
 
-### Frontend Architecture
+- React 18+
+- Material-UI
+- Recharts
+- React-Leaflet
+- Vite
+
+### Backend
+
+- Python 3.9+
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+
+### AI/ML
+
+- scikit-learn
+- pandas
+- numpy
+- feature-engine
+- optuna
+
+## Prerequisites
+
+- Node.js 16+
+- Python 3.9+
+- PostgreSQL 13+
+- Git
+
+## Project Structure
+
 ```
-src/
-├── components/           # Reusable UI components
-│   ├── analytics/       # Analytics and reporting
-│   ├── auth/           # Authentication components
-│   ├── batches/        # Batch management
-│   ├── dashboard/      # Dashboard components
-│   ├── enrollments/    # Enrollment management
-│   ├── inquiry/        # Student inquiry handling
-│   ├── payments/       # Payment processing
-│   ├── programs/       # Program management
-│   ├── students/       # Student management
-│   └── ui/            # Common UI components
-├── context/            # React context providers
-├── db/                # Database utilities
-├── lib/               # Utility libraries
-├── pages/             # Page components
-├── routes/            # Route configurations
-└── utils/             # Helper functions
-```
-
-### Technology Stack
-
-| Category | Technology | Version | Purpose |
-|----------|------------|---------|---------|
-| **Frontend** | React | 18.2.0 | UI Framework |
-| **Build Tool** | Vite | 5.0.8 | Development & Build |
-| **Styling** | Tailwind CSS | 3.4.17 | CSS Framework |
-| **UI Components** | Ant Design | 5.26.0 | Component Library |
-| **Animations** | Framer Motion | 12.16.0 | Animations |
-| **Backend** | Supabase | 2.50.0 | Database & Auth |
-| **Payment** | PayHere | - | Payment Gateway |
-| **Charts** | Recharts | 2.15.3 | Data Visualization |
-
-## 🔄 System Workflows
-
-### Student Enrollment Workflow
-```mermaid
-sequenceDiagram
-    participant S as Student
-    participant C as Counselor
-    participant M as Manager
-    participant DB as Database
-    participant PG as Payment Gateway
-
-    S->>C: Submit Inquiry
-    C->>DB: Create Student Record
-    C->>M: Request Program Assignment
-    M->>DB: Assign Program & Create Payment Plan
-    M->>S: Send Payment Instructions
-    S->>PG: Process Payment
-    PG->>DB: Update Payment Status
-    DB->>M: Confirm Enrollment
-    M->>S: Send Enrollment Confirmation
+SMIS-AI/
+├── src/
+│   ├── ai_service/           # AI/ML pipeline
+│   │   ├── docs/            # Documentation
+│   │   ├── models/         # Trained models
+│   │   └── data/          # Training data
+│   ├── components/         # React components
+│   ├── context/           # React context
+│   ├── utils/             # Utility functions
+│   └── assets/            # Static assets
+├── public/                # Public assets
+└── docs/                 # Project documentation
 ```
 
-### Payment Processing Workflow
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant FE as Frontend
-    participant DB as Supabase
-    participant PH as PayHere Gateway
-    participant WH as Webhook Handler
+## Installation
 
-    U->>FE: Initiate Payment
-    FE->>DB: Create Payment Record
-    FE->>PH: Submit Payment Details
-    PH->>U: Redirect to Payment Page
-    U->>PH: Complete Payment
-    PH->>WH: Payment Notification
-    WH->>DB: Update Payment Status
-    PH->>FE: Return to Application
-    FE->>DB: Verify Payment Status
-    DB->>FE: Return Updated Status
-    FE->>U: Show Payment Confirmation
-```
+1. **Clone the Repository**
 
-### User Authentication Flow
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant FE as Frontend
-    participant SA as Supabase Auth
-    participant DB as Database
+   ```bash
+   git clone https://github.com/your-org/SMIS-AI.git
+   cd SMIS-AI
+   ```
 
-    U->>FE: Enter Credentials
-    FE->>SA: Authenticate User
-    SA->>DB: Validate Credentials
-    DB->>SA: Return User Data
-    SA->>FE: Return Auth Token
-    FE->>FE: Store Session
-    FE->>U: Redirect to Dashboard
-    
-    Note over FE,SA: Protected Route Access
-    FE->>SA: Validate Token
-    SA->>FE: Return User Role
-    FE->>U: Render Role-specific UI
-```
+2. **Frontend Setup**
 
-### Student Management Workflow
-```mermaid
-sequenceDiagram
-    participant M as Marketing Staff
-    participant MG as Manager
-    participant DB as Database
-    participant N as Notification System
+   ```bash
+   # Install dependencies
+   npm install
 
-    M->>DB: Create Student Profile
-    DB->>MG: Notify New Student
-    MG->>DB: Review & Approve
-    MG->>DB: Assign Program & Batch
-    DB->>N: Trigger Enrollment Notifications
-    N->>M: Update Marketing Dashboard
-    N->>MG: Update Manager Dashboard
-```
+   # Create environment file
+   cp .env.example .env
+   ```
 
-## 🚀 Getting Started
+3. **AI Service Setup**
 
-### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn package manager
-- Modern web browser
-- Supabase account for backend services
+   ```bash
+   # Create Python virtual environment
+   python -m venv venv
+   source venv/bin/activate  # Linux/Mac
+   .\venv\Scripts\activate   # Windows
 
-### Installation
+   # Install Python dependencies
+   cd src/ai_service
+   pip install -r requirements.txt
+   ```
 
-1. **Clone the repository:**
-```bash
-git clone https://github.com/rasiboi/SMISFrontend.git
-cd SMISFrontend
-```
+4. **Database Setup**
 
-2. **Install dependencies:**
-```bash
-npm install
-```
+   ```bash
+   # Create database
+   createdb icbt_smis
 
-3. **Environment Configuration:**
-Create a `.env` file in the root directory:
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_PAYHERE_MERCHANT_ID=your_payhere_merchant_id
-VITE_PAYHERE_SANDBOX=true
-```
+   # Run migrations
+   python src/ai_service/setup.py
+   ```
 
-4. **Start the development server:**
-```bash
-npm run dev
-```
+## Configuration
 
-5. **Access the application:**
-Open your browser and navigate to `http://localhost:5173`
+1. **Frontend Environment (.env)**
 
-### Build for Production
+   ```env
+   VITE_API_URL=http://localhost:8000
+   VITE_MAP_KEY=your_map_key
+   ```
 
-```bash
-npm run build
-npm run preview
-```
+2. **AI Service Configuration**
+   ```python
+   # src/ai_service/config.py
+   DB_URL = "postgresql://user:pass@localhost/icbt_smis"
+   MODEL_PATH = "models/student_registration_model.pkl"
+   ```
 
-### Deployment
+## Running the Application
 
-The application is configured for GitHub Pages deployment:
+1. **Start Frontend Development Server**
 
-```bash
-npm run deploy
-```
+   ```bash
+   npm run dev
+   ```
 
-## 🎨 UI/UX Design Principles
+   Access the application at `http://localhost:5173`
 
-### Design System
-- **Color Palette:** Modern, accessible color scheme with high contrast
-- **Typography:** Clean, readable fonts with proper hierarchy
-- **Icons:** Consistent icon set using Ant Design and Heroicons
-- **Animations:** Smooth, purposeful animations using Framer Motion
-- **Responsive Design:** Mobile-first approach with breakpoint optimization
+2. **Start AI Service**
+   ```bash
+   cd src/ai_service
+   uvicorn api:app --reload
+   ```
+   API will be available at `http://localhost:8000`
 
-### User Experience
-- **Intuitive Navigation:** Clear navigation patterns with breadcrumbs
-- **Real-time Feedback:** Immediate user feedback for all actions
-- **Progressive Disclosure:** Information revealed progressively to avoid overwhelm
-- **Accessibility:** WCAG 2.1 AA compliance with keyboard navigation support
+## Model Training
 
-## 🔧 Configuration
+1. **Prepare Training Data**
 
-### Payment Gateway Configuration
-```javascript
-// PayHere Configuration
-const PAYHERE_CONFIG = {
-  sandbox: process.env.VITE_PAYHERE_SANDBOX === 'true',
-  merchant_id: process.env.VITE_PAYHERE_MERCHANT_ID,
-  notify_url: `${window.location.origin}/api/payment-notify`,
-  return_url: `${window.location.origin}/payment-success`,
-  cancel_url: `${window.location.origin}/payment-cancel`
-};
-```
+   ```bash
+   python src/ai_service/prepare_data.py
+   ```
 
-### Database Schema
-Key tables and relationships:
-- **Students:** Core student information
-- **Programs:** Academic program definitions
-- **Batches:** Class scheduling and capacity
-- **Payment Plans:** Student payment structures
-- **Transactions:** Payment transaction records
-- **Users:** System user management
+2. **Train Model**
 
-## 📊 Performance Metrics
+   ```bash
+   python src/ai_service/train_model.py
+   ```
 
-### Key Performance Indicators
-- **Load Time:** < 2 seconds initial page load
-- **Bundle Size:** Optimized with code splitting
-- **Lighthouse Score:** 90+ for Performance, SEO, and Accessibility
-- **Database Queries:** Optimized with proper indexing
-- **Real-time Updates:** < 100ms response time for live data
+3. **Evaluate Model**
+   ```bash
+   python src/ai_service/evaluate_model.py
+   ```
 
-## 🔒 Security Features
+## Documentation
 
-### Authentication & Authorization
-- JWT-based authentication through Supabase
-- Role-based access control (Manager, Marketing, Counselor)
-- Session management with automatic logout
-- API endpoint protection
+- [ML Pipeline Documentation](src/ai_service/docs/ML_PIPELINE_DOCUMENTATION.md)
+- [Model Evaluation](src/ai_service/docs/MODEL_EVALUATION.md)
+- [Dashboard Visualization](src/ai_service/docs/DASHBOARD_VISUALIZATION.md)
 
-### Data Security
-- Row-level security (RLS) policies in Supabase
-- Input validation and sanitization
-- HTTPS enforcement
-- Sensitive data encryption
+## Testing
 
-### Payment Security
-- PCI DSS compliant payment processing
-- Secure hash generation for transactions
-- No sensitive payment data stored locally
-- Payment gateway tokenization
+1. **Frontend Tests**
 
-## 🧪 Testing Strategy
+   ```bash
+   npm test
+   ```
 
-### Testing Framework
-- **Unit Tests:** Component-level testing with React Testing Library
-- **Integration Tests:** End-to-end workflow testing
-- **Performance Tests:** Load testing and optimization
-- **Security Tests:** Vulnerability scanning and penetration testing
+2. **AI Service Tests**
+   ```bash
+   cd src/ai_service
+   pytest
+   ```
 
-### Quality Assurance
-- ESLint for code quality
-- Prettier for code formatting
-- Husky for pre-commit hooks
-- Automated testing in CI/CD pipeline
+## Deployment
 
-## 📈 Monitoring & Analytics
+1. **Build Frontend**
 
-### Application Monitoring
-- Real-time error tracking
-- Performance monitoring
-- User interaction analytics
-- Payment transaction monitoring
+   ```bash
+   npm run build
+   ```
 
-### Business Intelligence
-- Student enrollment trends
-- Payment success rates
-- Program popularity metrics
-- Counselor performance analytics
+2. **Deploy AI Service**
+   ```bash
+   # Using Docker
+   docker build -t icbt-smis .
+   docker run -p 8000:8000 icbt-smis
+   ```
 
-## 🤝 Contributing
+## Contributing
 
-We welcome contributions from the community! Please read our contributing guidelines before submitting pull requests.
-
-### Development Workflow
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Write/update tests
-5. Submit a pull request
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Code Standards
-- Follow React best practices
-- Use TypeScript for type safety
-- Maintain 80%+ test coverage
-- Follow conventional commit messages
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Support
+## Support
 
-For technical support or questions:
-- **Email:** support@smis.edu
-- **Documentation:** [Wiki](https://github.com/rasiboi/SMISFrontend/wiki)
-- **Issues:** [GitHub Issues](https://github.com/rasiboi/SMISFrontend/issues)
+For support and questions, please contact:
 
-## 🚀 Roadmap
+- Email: support@icbt.edu.lk
+- Issue Tracker: [GitHub Issues](https://github.com/your-org/SMIS-AI/issues)
 
-### Version 2.0 Features
-- [ ] Mobile application (React Native)
-- [ ] Advanced reporting dashboard
-- [ ] Multi-language support
-- [ ] API integration with external systems
-- [ ] Advanced analytics with AI insights
-- [ ] Automated communication system
+## Acknowledgments
 
----
-
-**Built with ❤️ by the SMIS Development Team**
-
-*This documentation is automatically generated and maintained. Last updated: December 2024*
+- ICBT Campus IT Team
+- Contributors and maintainers
+- Open source community
