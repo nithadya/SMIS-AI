@@ -1,30 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  AreaChart, LineChart, BarChart, PieChart, Area, Line, Bar, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
+  AreaChart,
+  LineChart,
+  BarChart,
+  PieChart,
+  Area,
+  Line,
+  Bar,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  Users,
+  FileText,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  TrendingUp,
+  Settings,
+  Download,
+  Filter,
+  Search,
+  UserCheck,
+  Calendar,
+  Award,
+  Target,
+  BarChart3,
+} from "lucide-react";
+import { MagicCard } from "../ui/MagicCard";
+import { AnimatedGradientText } from "../ui/AnimatedGradientText";
+import { ShimmerButton } from "../ui/ShimmerButton";
 import { 
-  Users, FileText, Clock, CheckCircle, AlertCircle, 
-  TrendingUp, Settings, Download, Filter, Search,
-  UserCheck, Calendar, Award, Target, BarChart3
-} from 'lucide-react';
-import { MagicCard } from '../ui/MagicCard';
-import { AnimatedGradientText } from '../ui/AnimatedGradientText';
-import { ShimmerButton } from '../ui/ShimmerButton';
-import { getEnrollmentRegistrationAnalytics, updateSortingMethod, exportAnalyticsReport } from '../../lib/api/manager';
+  getEnrollmentRegistrationAnalytics,
+  updateSortingMethod,
+} from "../../lib/api/manager";
+import { generateReport } from "../../utils/reportGenerator";
 
 const EnrollmentRegistrationManagement = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [managementData, setManagementData] = useState(null);
   const [selectedFilters, setSelectedFilters] = useState({
-    program: 'all',
-    status: 'all',
-    counselor: 'all',
-    dateRange: '30'
+    program: "all",
+    status: "all",
+    counselor: "all",
+    dateRange: "30",
   });
-  const [sortingMethod, setSortingMethod] = useState('priority_score');
+  const [sortingMethod, setSortingMethod] = useState("priority_score");
 
   useEffect(() => {
     fetchManagementData();
@@ -33,10 +62,12 @@ const EnrollmentRegistrationManagement = () => {
   const fetchManagementData = async () => {
     setLoading(true);
     try {
-      const { data, error } = await getEnrollmentRegistrationAnalytics(selectedFilters);
+      const { data, error } = await getEnrollmentRegistrationAnalytics(
+        selectedFilters
+      );
       
       if (error) {
-        console.error('Error fetching management data:', error);
+        console.error("Error fetching management data:", error);
         // Fall back to mock data for demonstration
       }
       
@@ -49,64 +80,118 @@ const EnrollmentRegistrationManagement = () => {
           documentationPending: 89,
           avgProcessingTime: 4.2,
           trends: {
-            enrollments: '+12.5%',
-            registrations: '+8.7%',
-            completion: '+5.3%',
-            processingTime: '-15.2%'
-          }
+            enrollments: "+12.5%",
+            registrations: "+8.7%",
+            completion: "+5.3%",
+            processingTime: "-15.2%",
+          },
         },
         statusDistribution: [
-          { status: 'Application Review', count: 125, percentage: 14.8 },
-          { status: 'Document Verification', count: 89, percentage: 10.5 },
-          { status: 'Payment Processing', count: 67, percentage: 7.9 },
-          { status: 'Course Assignment', count: 45, percentage: 5.3 },
-          { status: 'Completed', count: 521, percentage: 61.5 }
+          { status: "Application Review", count: 125, percentage: 14.8 },
+          { status: "Document Verification", count: 89, percentage: 10.5 },
+          { status: "Payment Processing", count: 67, percentage: 7.9 },
+          { status: "Course Assignment", count: 45, percentage: 5.3 },
+          { status: "Completed", count: 521, percentage: 61.5 },
         ],
         processingTrends: [
-          { month: 'Jan', enrollments: 78, registrations: 65, completion: 75 },
-          { month: 'Feb', enrollments: 92, registrations: 78, completion: 82 },
-          { month: 'Mar', enrollments: 105, registrations: 89, completion: 85 },
-          { month: 'Apr', enrollments: 118, registrations: 95, completion: 78 },
-          { month: 'May', enrollments: 132, registrations: 108, completion: 81 },
-          { month: 'Jun', enrollments: 147, registrations: 125, completion: 85 }
+          { month: "Jan", enrollments: 78, registrations: 65, completion: 75 },
+          { month: "Feb", enrollments: 92, registrations: 78, completion: 82 },
+          { month: "Mar", enrollments: 105, registrations: 89, completion: 85 },
+          { month: "Apr", enrollments: 118, registrations: 95, completion: 78 },
+          {
+            month: "May",
+            enrollments: 132,
+            registrations: 108,
+            completion: 81,
+          },
+          {
+            month: "Jun",
+            enrollments: 147,
+            registrations: 125,
+            completion: 85,
+          },
         ],
         documentationAnalytics: [
-          { type: 'ID Documents', submitted: 456, verified: 432, pending: 24, rate: 94.7 },
-          { type: 'Academic Records', submitted: 425, verified: 398, pending: 27, rate: 93.6 },
-          { type: 'Medical Certificates', submitted: 389, verified: 365, pending: 24, rate: 93.8 },
-          { type: 'Payment Receipts', submitted: 478, verified: 456, pending: 22, rate: 95.4 }
+          {
+            type: "ID Documents",
+            submitted: 456,
+            verified: 432,
+            pending: 24,
+            rate: 94.7,
+          },
+          {
+            type: "Academic Records",
+            submitted: 425,
+            verified: 398,
+            pending: 27,
+            rate: 93.6,
+          },
+          {
+            type: "Medical Certificates",
+            submitted: 389,
+            verified: 365,
+            pending: 24,
+            rate: 93.8,
+          },
+          {
+            type: "Payment Receipts",
+            submitted: 478,
+            verified: 456,
+            pending: 22,
+            rate: 95.4,
+          },
         ],
         workflowMetrics: [
-          { stage: 'Initial Application', avgTime: 2.1, target: 2.0, efficiency: 95 },
-          { stage: 'Document Review', avgTime: 3.4, target: 3.0, efficiency: 88 },
-          { stage: 'Verification Process', avgTime: 5.2, target: 4.0, efficiency: 77 },
-          { stage: 'Final Approval', avgTime: 1.8, target: 2.0, efficiency: 111 }
-        ]
+          {
+            stage: "Initial Application",
+            avgTime: 2.1,
+            target: 2.0,
+            efficiency: 95,
+          },
+          {
+            stage: "Document Review",
+            avgTime: 3.4,
+            target: 3.0,
+            efficiency: 88,
+          },
+          {
+            stage: "Verification Process",
+            avgTime: 5.2,
+            target: 4.0,
+            efficiency: 77,
+          },
+          {
+            stage: "Final Approval",
+            avgTime: 1.8,
+            target: 2.0,
+            efficiency: 111,
+          },
+        ],
       };
       
       setManagementData(data || mockData);
     } catch (error) {
-      console.error('Error fetching management data:', error);
+      console.error("Error fetching management data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const sortingMethods = [
-    { value: 'priority_score', label: 'Priority Score (AI-based)' },
-    { value: 'date_submitted', label: 'Date Submitted' },
-    { value: 'document_completeness', label: 'Document Completeness' },
-    { value: 'payment_status', label: 'Payment Status' },
-    { value: 'program_capacity', label: 'Program Capacity' },
-    { value: 'counselor_workload', label: 'Counselor Workload' }
+    { value: "priority_score", label: "Priority Score (AI-based)" },
+    { value: "date_submitted", label: "Date Submitted" },
+    { value: "document_completeness", label: "Document Completeness" },
+    { value: "payment_status", label: "Payment Status" },
+    { value: "program_capacity", label: "Program Capacity" },
+    { value: "counselor_workload", label: "Counselor Workload" },
   ];
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'pipeline', label: 'Processing Pipeline', icon: Users },
-    { id: 'documentation', label: 'Documentation Management', icon: FileText },
-    { id: 'analytics', label: 'Performance Analytics', icon: TrendingUp },
-    { id: 'workflow', label: 'Workflow Configuration', icon: Settings }
+    { id: "overview", label: "Overview", icon: BarChart3 },
+    { id: "pipeline", label: "Processing Pipeline", icon: Users },
+    { id: "documentation", label: "Documentation Management", icon: FileText },
+    { id: "analytics", label: "Performance Analytics", icon: TrendingUp },
+    { id: "workflow", label: "Workflow Configuration", icon: Settings },
   ];
 
   const renderOverview = () => (
@@ -116,7 +201,9 @@ const EnrollmentRegistrationManagement = () => {
         <MagicCard className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Enrollments</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Total Enrollments
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {managementData?.overview.totalEnrollments.toLocaleString()}
               </p>
@@ -133,7 +220,9 @@ const EnrollmentRegistrationManagement = () => {
         <MagicCard className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Registrations</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Pending Registrations
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {managementData?.overview.pendingRegistrations}
               </p>
@@ -150,7 +239,9 @@ const EnrollmentRegistrationManagement = () => {
         <MagicCard className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Completion Rate</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Completion Rate
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {managementData?.overview.completionRate}%
               </p>
@@ -167,12 +258,15 @@ const EnrollmentRegistrationManagement = () => {
         <MagicCard className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Processing Time</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                Avg Processing Time
+              </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
                 {managementData?.overview.avgProcessingTime} days
               </p>
               <p className="text-sm text-green-600 dark:text-green-400">
-                {managementData?.overview.trends.processingTime} from last period
+                {managementData?.overview.trends.processingTime} from last
+                period
               </p>
             </div>
             <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
@@ -193,9 +287,24 @@ const EnrollmentRegistrationManagement = () => {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line type="monotone" dataKey="enrollments" stroke="#8884d8" name="Enrollments" />
-              <Line type="monotone" dataKey="registrations" stroke="#82ca9d" name="Registrations" />
-              <Line type="monotone" dataKey="completion" stroke="#ffc658" name="Completion Rate %" />
+              <Line
+                type="monotone"
+                dataKey="enrollments"
+                stroke="#8884d8"
+                name="Enrollments"
+              />
+              <Line
+                type="monotone"
+                dataKey="registrations"
+                stroke="#82ca9d"
+                name="Registrations"
+              />
+              <Line
+                type="monotone"
+                dataKey="completion"
+                stroke="#ffc658"
+                name="Completion Rate %"
+              />
             </LineChart>
           </ResponsiveContainer>
         </MagicCard>
@@ -212,10 +321,19 @@ const EnrollmentRegistrationManagement = () => {
                 cy="50%"
                 outerRadius={80}
                 fill="#8884d8"
-                label={({ status, percentage }) => `${status} (${percentage.toFixed(1)}%)`}
+                label={({ status, percentage }) =>
+                  `${status} (${percentage.toFixed(1)}%)`
+                }
               >
                 {managementData?.statusDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00'][index % 5]} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={
+                      ["#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#00ff00"][
+                        index % 5
+                      ]
+                    }
+                  />
                 ))}
               </Pie>
               <Tooltip />
@@ -230,20 +348,32 @@ const EnrollmentRegistrationManagement = () => {
   const renderPipeline = () => (
     <div className="space-y-6">
       <MagicCard className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Student Processing Pipeline</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          Student Processing Pipeline
+        </h3>
         <div className="space-y-4">
           {managementData?.statusDistribution.map((status, index) => (
-            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div
+              key={index}
+              className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+            >
               <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-3 ${
-                  status.status === 'Completed' ? 'bg-green-500' :
-                  status.status.includes('Pending') ? 'bg-yellow-500' : 'bg-blue-500'
-                }`}></div>
+                <div
+                  className={`w-3 h-3 rounded-full mr-3 ${
+                    status.status === "Completed"
+                      ? "bg-green-500"
+                      : status.status.includes("Pending")
+                      ? "bg-yellow-500"
+                      : "bg-blue-500"
+                  }`}
+                ></div>
                 <span className="font-medium">{status.status}</span>
               </div>
               <div className="flex items-center space-x-4">
                 <span className="text-2xl font-bold">{status.count}</span>
-                <span className="text-sm text-gray-500">{status.percentage.toFixed(1)}%</span>
+                <span className="text-sm text-gray-500">
+                  {status.percentage.toFixed(1)}%
+                </span>
               </div>
             </div>
           ))}
@@ -275,11 +405,15 @@ const EnrollmentRegistrationManagement = () => {
                   <td className="text-right py-3 px-4">{doc.verified}</td>
                   <td className="text-right py-3 px-4">{doc.pending}</td>
                   <td className="text-right py-3 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      doc.rate > 95 ? 'bg-green-100 text-green-800' : 
-                      doc.rate > 90 ? 'bg-yellow-100 text-yellow-800' : 
-                      'bg-red-100 text-red-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        doc.rate > 95
+                          ? "bg-green-100 text-green-800"
+                          : doc.rate > 90
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
                       {doc.rate.toFixed(1)}%
                     </span>
                   </td>
@@ -295,17 +429,26 @@ const EnrollmentRegistrationManagement = () => {
   const renderAnalytics = () => (
     <div className="space-y-6">
       <MagicCard className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Workflow Efficiency Metrics</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          Workflow Efficiency Metrics
+        </h3>
         <div className="space-y-4">
           {managementData?.workflowMetrics.map((stage, index) => (
-            <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div
+              key={index}
+              className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg"
+            >
               <div className="flex justify-between items-center mb-2">
                 <span className="font-medium">{stage.stage}</span>
-                <span className={`px-2 py-1 rounded-full text-xs ${
-                  stage.efficiency > 100 ? 'bg-green-100 text-green-800' :
-                  stage.efficiency > 85 ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs ${
+                    stage.efficiency > 100
+                      ? "bg-green-100 text-green-800"
+                      : stage.efficiency > 85
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
                   {stage.efficiency}% efficiency
                 </span>
               </div>
@@ -326,7 +469,9 @@ const EnrollmentRegistrationManagement = () => {
         <h3 className="text-lg font-semibold mb-4">Sorting Configuration</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Current Sorting Method</label>
+            <label className="block text-sm font-medium mb-2">
+              Current Sorting Method
+            </label>
             <select
               value={sortingMethod}
               onChange={async (e) => {
@@ -336,17 +481,21 @@ const EnrollmentRegistrationManagement = () => {
               }}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg"
             >
-              {sortingMethods.map(method => (
-                <option key={method.value} value={method.value}>{method.label}</option>
+              {sortingMethods.map((method) => (
+                <option key={method.value} value={method.value}>
+                  {method.label}
+                </option>
               ))}
             </select>
           </div>
           <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
             <p className="text-sm text-blue-800 dark:text-blue-200">
-              <strong>Current Method:</strong> {sortingMethods.find(m => m.value === sortingMethod)?.label}
+              <strong>Current Method:</strong>{" "}
+              {sortingMethods.find((m) => m.value === sortingMethod)?.label}
             </p>
             <p className="text-sm text-blue-600 dark:text-blue-300 mt-1">
-              This sorting method optimizes the registration to enrollment workflow for better processing efficiency.
+              This sorting method optimizes the registration to enrollment
+              workflow for better processing efficiency.
             </p>
           </div>
         </div>
@@ -356,12 +505,18 @@ const EnrollmentRegistrationManagement = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'overview': return renderOverview();
-      case 'pipeline': return renderPipeline();
-      case 'documentation': return renderDocumentation();
-      case 'analytics': return renderAnalytics();
-      case 'workflow': return renderWorkflow();
-      default: return renderOverview();
+      case "overview":
+        return renderOverview();
+      case "pipeline":
+        return renderPipeline();
+      case "documentation":
+        return renderDocumentation();
+      case "analytics":
+        return renderAnalytics();
+      case "workflow":
+        return renderWorkflow();
+      default:
+        return renderOverview();
     }
   };
 
@@ -372,13 +527,130 @@ const EnrollmentRegistrationManagement = () => {
           <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div
+                key={i}
+                className="h-32 bg-gray-200 dark:bg-gray-700 rounded"
+              ></div>
             ))}
           </div>
         </div>
       </div>
     );
   }
+
+  const handleExportData = async () => {
+    try {
+      if (!managementData || !managementData.overview) {
+        console.error("No management data available");
+        return;
+      }
+
+      // Safely extract and transform data
+      const processedData = {
+        processingTrends: Array.isArray(managementData.processingTrends)
+          ? managementData.processingTrends
+          : [],
+        documentationAnalytics: Array.isArray(
+          managementData.documentationAnalytics
+        )
+          ? managementData.documentationAnalytics
+          : [],
+        workflowMetrics: Array.isArray(managementData.workflowMetrics)
+          ? managementData.workflowMetrics
+          : [],
+      };
+
+      // Prepare sections based on available data
+      const sections = [];
+
+      // Processing Trends Section
+      if (processedData.processingTrends.length > 0) {
+        sections.push({
+          title: "Monthly Processing Trends",
+          data: processedData.processingTrends.map((trend) => ({
+            month: trend?.month || "",
+            enrollments: trend?.enrollments || 0,
+            registrations: trend?.registrations || 0,
+            completionRate: `${trend?.completion || 0}%`,
+          })),
+          columns: [
+            { header: "Month", key: "month" },
+            { header: "Enrollments", key: "enrollments" },
+            { header: "Registrations", key: "registrations" },
+            { header: "Completion Rate", key: "completionRate" },
+          ],
+        });
+      }
+
+      // Documentation Analytics Section
+      if (processedData.documentationAnalytics.length > 0) {
+        sections.push({
+          title: "Documentation Analytics",
+          data: processedData.documentationAnalytics.map((doc) => ({
+            type: doc?.type || "",
+            submitted: doc?.submitted || 0,
+            verified: doc?.verified || 0,
+            pending: doc?.pending || 0,
+            verificationRate: `${doc?.rate || 0}%`,
+          })),
+          columns: [
+            { header: "Document Type", key: "type" },
+            { header: "Submitted", key: "submitted" },
+            { header: "Verified", key: "verified" },
+            { header: "Pending", key: "pending" },
+            { header: "Verification Rate", key: "verificationRate" },
+          ],
+        });
+      }
+
+      // Workflow Metrics Section
+      if (processedData.workflowMetrics.length > 0) {
+        sections.push({
+          title: "Workflow Performance",
+          data: processedData.workflowMetrics.map((metric) => ({
+            stage: metric?.stage || "",
+            avgTime: `${metric?.avgTime || 0} days`,
+            target: `${metric?.target || 0} days`,
+            efficiency: `${metric?.efficiency || 0}%`,
+          })),
+          columns: [
+            { header: "Process Stage", key: "stage" },
+            { header: "Average Time", key: "avgTime" },
+            { header: "Target Time", key: "target" },
+            { header: "Efficiency", key: "efficiency" },
+          ],
+        });
+      }
+
+      // Generate report only if we have data
+      if (sections.length > 0) {
+        await generateReport({
+          title: "ICBT Enrollment & Registration Analytics Report",
+          sections: sections,
+          summaryData: {
+            "Total Enrollments": managementData.overview?.totalEnrollments || 0,
+            "Pending Registrations":
+              managementData.overview?.pendingRegistrations || 0,
+            "Completion Rate": `${
+              managementData.overview?.completionRate || 0
+            }%`,
+            "Average Processing Time": `${
+              managementData.overview?.avgProcessingTime || 0
+            } days`,
+            "Documentation Pending":
+              managementData.overview?.documentationPending || 0,
+          },
+          filename: `ICBT-Enrollment-Analytics-Report-${
+            new Date().toISOString().split("T")[0]
+          }.pdf`,
+        });
+      } else {
+        console.error("No data available for report generation");
+      }
+    } catch (error) {
+      console.error("Error generating report:", error);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -389,25 +661,26 @@ const EnrollmentRegistrationManagement = () => {
             Enrollment & Registration Management
           </AnimatedGradientText>
           <p className="text-gray-600 dark:text-gray-400">
-            Comprehensive oversight and management of student enrollment and registration processes
+            Comprehensive oversight and management of student enrollment and
+            registration processes
           </p>
         </div>
         
         <div className="flex items-center space-x-4 mt-4 lg:mt-0">
           <select
             value={selectedFilters.program}
-            onChange={(e) => setSelectedFilters(prev => ({ ...prev, program: e.target.value }))}
+            onChange={(e) =>
+              setSelectedFilters((prev) => ({
+                ...prev,
+                program: e.target.value,
+              }))
+            }
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
           >
             <option value="all">All Programs</option>
           </select>
           
-          <ShimmerButton onClick={async () => {
-            const { data } = await exportAnalyticsReport('enrollment_registration', selectedFilters);
-            if (data?.filename) {
-              console.log(`Report exported: ${data.filename}`);
-            }
-          }}>
+          <ShimmerButton onClick={handleExportData}>
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </ShimmerButton>
@@ -425,8 +698,8 @@ const EnrollmentRegistrationManagement = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                    : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                 }`}
               >
                 <Icon className="h-4 w-4 mr-2" />
