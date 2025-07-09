@@ -92,14 +92,42 @@ export class ReportGenerator {
 
   addSection(title, data, columns) {
     try {
+      // Check if autoTable is available
+      if (typeof this.doc.autoTable !== 'function') {
+        console.error("autoTable is not available on jsPDF instance");
+        throw new Error("autoTable plugin not loaded");
+      }
+
       if (!data || !Array.isArray(data) || data.length === 0) {
         console.warn(`No data provided for section: ${title}`);
+        // Add a message indicating no data
+        this.doc.setFontSize(12);
+        this.doc.setFont("helvetica", "bold");
+        this.doc.text(title, this.margins.left, this.currentY);
+        
+        this.doc.setFontSize(10);
+        this.doc.setFont("helvetica", "normal");
+        this.doc.text("No data available for this section.", this.margins.left, this.currentY + 10);
+        
+        this.currentY += 25;
+        return;
+      }
+
+      // Validate columns
+      if (!columns || !Array.isArray(columns) || columns.length === 0) {
+        console.warn(`No columns provided for section: ${title}`);
         return;
       }
 
       this.doc.setFontSize(12);
       this.doc.setFont("helvetica", "bold");
       this.doc.text(title, this.margins.left, this.currentY);
+
+      // Check if we need a new page
+      if (this.currentY > this.pageHeight - 80) {
+        this.doc.addPage();
+        this.currentY = this.margins.top;
+      }
 
       this.doc.autoTable({
         startY: this.currentY + 5,
@@ -135,6 +163,9 @@ export class ReportGenerator {
       this.currentY += 10;
     } catch (error) {
       console.error("Error in addSection:", error);
+      console.error("Section title:", title);
+      console.error("Data:", data);
+      console.error("Columns:", columns);
       throw new Error(`Failed to add section: ${title}`);
     }
   }

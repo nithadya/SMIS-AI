@@ -158,73 +158,90 @@ const Analytics = () => {
   ];
 
   const handleExportData = () => {
-    // Prepare data for the report
-    const districtAnalyticsData = districtData.map((district) => ({
-      district: district.name,
-      predictedStudents: district.value,
-      percentage: `${(district.percentage * 100).toFixed(1)}%`,
-      density: district.density.toFixed(1),
-    }));
+    try {
+      // Check if data is available
+      if (loading) {
+        console.warn("Cannot export data while loading");
+        return;
+      }
 
-    const modelPerformanceData = Object.entries(modelMetrics).map(
-      ([metric, value]) => ({
-        metric: metric.replace(/([A-Z])/g, " $1").trim(),
-        value: `${(value * 100).toFixed(1)}%`,
-      })
-    );
+      if (error) {
+        console.error("Cannot export data due to error:", error);
+        return;
+      }
 
-    const historicalTrendData = historicalData.map((data) => ({
-      month: data.month,
-      students: data.students,
-      accuracy: `${(data.accuracy * 100).toFixed(1)}%`,
-      confidence: `${(data.confidence * 100).toFixed(1)}%`,
-    }));
+      // Prepare data for the report
+      const districtAnalyticsData = districtData.map((district) => ({
+        district: district.name,
+        predictedStudents: district.value,
+        percentage: `${(district.percentage * 100).toFixed(1)}%`,
+        density: district.density.toFixed(1),
+      }));
 
-    generateReport({
-      title: "ICBT Student Registration Analytics Report",
-      sections: [
-        {
-          title: "District-wise Registration Predictions",
-          data: districtAnalyticsData,
-          columns: [
-            { header: "District", key: "district" },
-            { header: "Predicted Students", key: "predictedStudents" },
-            { header: "Percentage", key: "percentage" },
-            { header: "Density Index", key: "density" },
-          ],
+      const modelPerformanceData = Object.entries(modelMetrics).map(
+        ([metric, value]) => ({
+          metric: metric.replace(/([A-Z])/g, " $1").trim(),
+          value: `${(value * 100).toFixed(1)}%`,
+        })
+      );
+
+      const historicalTrendData = historicalData.map((data) => ({
+        month: data.month,
+        students: data.students,
+        accuracy: `${(data.accuracy * 100).toFixed(1)}%`,
+        confidence: `${(data.confidence * 100).toFixed(1)}%`,
+      }));
+
+      generateReport({
+        title: "ICBT Student Registration Analytics Report",
+        sections: [
+          {
+            title: "District-wise Registration Predictions",
+            data: districtAnalyticsData,
+            columns: [
+              { header: "District", key: "district" },
+              { header: "Predicted Students", key: "predictedStudents" },
+              { header: "Percentage", key: "percentage" },
+              { header: "Density Index", key: "density" },
+            ],
+          },
+          {
+            title: "Model Performance Metrics",
+            data: modelPerformanceData,
+            columns: [
+              { header: "Metric", key: "metric" },
+              { header: "Value", key: "value" },
+            ],
+          },
+          {
+            title: "Historical Trends",
+            data: historicalTrendData,
+            columns: [
+              { header: "Month", key: "month" },
+              { header: "Students", key: "students" },
+              { header: "Accuracy", key: "accuracy" },
+              { header: "Confidence", key: "confidence" },
+            ],
+          },
+        ],
+        summaryData: {
+          "Total Predicted Students": totalPredictions,
+          "Average Students per District": averagePrediction.toFixed(0),
+          "Overall Model Accuracy": `${(modelMetrics.accuracy * 100).toFixed(
+            1
+          )}%`,
+          "Model Confidence": `${(modelMetrics.confidence * 100).toFixed(1)}%`,
+          "Number of Districts": predictions?.districts?.length || 0,
         },
-        {
-          title: "Model Performance Metrics",
-          data: modelPerformanceData,
-          columns: [
-            { header: "Metric", key: "metric" },
-            { header: "Value", key: "value" },
-          ],
-        },
-        {
-          title: "Historical Trends",
-          data: historicalTrendData,
-          columns: [
-            { header: "Month", key: "month" },
-            { header: "Students", key: "students" },
-            { header: "Accuracy", key: "accuracy" },
-            { header: "Confidence", key: "confidence" },
-          ],
-        },
-      ],
-      summaryData: {
-        "Total Predicted Students": totalPredictions,
-        "Average Students per District": averagePrediction.toFixed(0),
-        "Overall Model Accuracy": `${(modelMetrics.accuracy * 100).toFixed(
-          1
-        )}%`,
-        "Model Confidence": `${(modelMetrics.confidence * 100).toFixed(1)}%`,
-        "Number of Districts": predictions?.districts?.length || 0,
-      },
-      filename: `ICBT-Analytics-Report-${
-        new Date().toISOString().split("T")[0]
-      }.pdf`,
-    });
+        filename: `ICBT-Analytics-Report-${
+          new Date().toISOString().split("T")[0]
+        }.pdf`,
+      });
+      
+      console.log("PDF report generated successfully");
+    } catch (error) {
+      console.error("Error generating report:", error);
+    }
   };
 
   const theme = useTheme();
@@ -291,6 +308,7 @@ const Analytics = () => {
             variant="contained"
             startIcon={<Download />}
             onClick={handleExportData}
+            disabled={loading || error || !predictions}
               sx={{
                 borderRadius: 2,
                 textTransform: "none",
