@@ -96,7 +96,7 @@ SMIS-AI/
 
 3. **AI Service Setup**
 
-   ```bash
+```bash
    # Create Python virtual environment
    python -m venv venv
    source venv/bin/activate  # Linux/Mac
@@ -109,7 +109,7 @@ SMIS-AI/
 
 4. **Database Setup**
 
-   ```bash
+```bash
    # Create database
    createdb icbt_smis
 
@@ -121,7 +121,7 @@ SMIS-AI/
 
 1. **Frontend Environment (.env)**
 
-   ```env
+```env
    VITE_API_URL=http://localhost:8000
    VITE_MAP_KEY=your_map_key
    ```
@@ -137,9 +137,9 @@ SMIS-AI/
 
 1. **Start Frontend Development Server**
 
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
 
    Access the application at `http://localhost:5173`
 
@@ -154,13 +154,13 @@ SMIS-AI/
 
 1. **Prepare Training Data**
 
-   ```bash
+```bash
    python src/ai_service/prepare_data.py
-   ```
+```
 
 2. **Train Model**
 
-   ```bash
+```bash
    python src/ai_service/train_model.py
    ```
 
